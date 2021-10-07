@@ -17,15 +17,16 @@
 
 package io.appform.dropwizard.discovery.bundle.id;
 
-import com.github.rholder.retry.RetryException;
-import com.github.rholder.retry.Retryer;
-import com.github.rholder.retry.RetryerBuilder;
-import com.github.rholder.retry.StopStrategies;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstraint;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.FailsafeExecutor;
+import net.jodah.failsafe.RetryPolicy;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -66,20 +66,24 @@ public class IdGenerator {
         }
     }
 
-    private static SecureRandom random = new SecureRandom(Long.toBinaryString(System.currentTimeMillis()).getBytes());
+    private static final SecureRandom random = new SecureRandom(Long.toBinaryString(System.currentTimeMillis()).getBytes());
     private static int nodeId;
-    private static DateTimeFormatter formatter = DateTimeFormat.forPattern("yyMMddHHmmssSSS");
+    private static final DateTimeFormatter formatter = DateTimeFormat.forPattern("yyMMddHHmmssSSS");
     private static final CollisionChecker collisionChecker = new CollisionChecker();
     private static List<IdValidationConstraint> globalConstraints = Collections.emptyList();
-    private static Map<String, List<IdValidationConstraint>> domainSpecificConstraints = new HashMap<>();
-    private static final Retryer<GenerationResult> retrier = RetryerBuilder.<GenerationResult>newBuilder()
-            .withStopStrategy(StopStrategies.stopAfterAttempt(512))
-            .retryIfException()
-            .retryIfResult(Objects::isNull)
-            .retryIfResult(result -> result.getState().equals(IdValidationState.INVALID_RETRYABLE))
-            .build();
+    private static final Map<String, List<IdValidationConstraint>> domainSpecificConstraints = new HashMap<>();
+
+    private static final RetryPolicy<GenerationResult> retryPolicy = new RetryPolicy<GenerationResult>()
+            .withMaxAttempts(512)
+            .handleIf((Predicate<Throwable>) throwable -> true)
+            .handleResultIf(Objects::isNull)
+            .handleResultIf(generationResult -> generationResult.getState() == IdValidationState.INVALID_RETRYABLE);
+
+    private static final FailsafeExecutor<GenerationResult> retrier = Failsafe.with(
+            Collections.singletonList(retryPolicy));
+
     private static final String patternString = "(.*)([0-9]{15})([0-9]{4})([0-9]{3})";
-    private static Pattern pattern = Pattern.compile(patternString);
+    private static final Pattern pattern = Pattern.compile(patternString);
 
     public static void initialize(int node) {
         nodeId = node;
@@ -105,7 +109,7 @@ public class IdGenerator {
 
     public static synchronized void registerGlobalConstraints(List<IdValidationConstraint> constraints) {
         Preconditions.checkArgument(null != constraints && !constraints.isEmpty());
-        if(null == globalConstraints) {
+        if (null == globalConstraints) {
             globalConstraints = new ArrayList<>();
         }
         globalConstraints.addAll(constraints);
@@ -117,7 +121,7 @@ public class IdGenerator {
 
     public static synchronized void registerDomainSpecificConstraints(String domain, List<IdValidationConstraint> validationConstraints) {
         Preconditions.checkArgument(null != validationConstraints && !validationConstraints.isEmpty());
-        if(!domainSpecificConstraints.containsKey(domain)) {
+        if (!domainSpecificConstraints.containsKey(domain)) {
             domainSpecificConstraints.put(domain, new ArrayList<>());
         }
         domainSpecificConstraints.get(domain).addAll(validationConstraints);
@@ -146,7 +150,7 @@ public class IdGenerator {
      * NOTE: There are performance implications for this.
      * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
      *
-     * @param prefix        String prefix
+     * @param prefix String prefix
      * @param domain Domain for constraint selection
      * @return
      */
@@ -159,8 +163,8 @@ public class IdGenerator {
      * NOTE: There are performance implications for this.
      * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
      *
-     * @param prefix        String prefix
-     * @param domain Domain for constraint selection
+     * @param prefix     String prefix
+     * @param domain     Domain for constraint selection
      * @param skipGlobal Skip global constrains and use only passed ones
      * @return Id if it could be generated
      */
@@ -214,6 +218,7 @@ public class IdGenerator {
         private final Id id;
         private final IdValidationState state;
     }
+
     /**
      * Generate id that mathces all passed constraints.
      * NOTE: There are performance implications for this.
@@ -221,24 +226,19 @@ public class IdGenerator {
      *
      * @param prefix        String prefix
      * @param inConstraints Constraints that need to be validate.
-     * @param skipGlobal Skip global constrains and use only passed ones
+     * @param skipGlobal    Skip global constrains and use only passed ones
      * @return Id if it could be generated
      */
     public static Optional<Id> generateWithConstraints(String prefix, final List<IdValidationConstraint> inConstraints, boolean skipGlobal) {
-        try {
-            final GenerationResult generationResult = retrier.call(() -> {
-                Id id = generate(prefix);
-                return new GenerationResult(id, validateId(inConstraints, id, skipGlobal));
-            });
-            return Optional.ofNullable(generationResult.getId());
+        val generationResult = retrier.get(
+                () -> {
+                    Id id = generate(prefix);
+                    return new GenerationResult(id, validateId(inConstraints, id, skipGlobal));
+                });
+        if (generationResult == null || generationResult.getState() != IdValidationState.VALID){
+            return Optional.empty();
         }
-        catch (ExecutionException e) {
-            log.error("Error occurred while generating id with prefix " + prefix, e);
-        }
-        catch (RetryException e) {
-            log.error("Failed to generate id with prefix " + prefix + " after max attempts (512)", e);
-        }
-        return Optional.empty();
+        return Optional.of(generationResult.getId());
     }
 
     private static synchronized IdInfo random() {
@@ -257,10 +257,10 @@ public class IdGenerator {
                 = skipGlobal || null == globalConstraints
                 ? null
                 : globalConstraints.stream()
-                        .filter(constraint -> !constraint.isValid(id))
-                        .findFirst()
-                        .orElse(null);
-        if(null != failedGlobalConstraint) {
+                .filter(constraint -> !constraint.isValid(id))
+                .findFirst()
+                .orElse(null);
+        if (null != failedGlobalConstraint) {
             return failedGlobalConstraint.failFast()
                     ? IdValidationState.INVALID_NON_RETRYABLE
                     : IdValidationState.INVALID_RETRYABLE;
@@ -273,7 +273,7 @@ public class IdGenerator {
                 .filter(constraint -> !constraint.isValid(id))
                 .findFirst()
                 .orElse(null);
-        if(null != failedLocalConstraint) {
+        if (null != failedLocalConstraint) {
             return failedLocalConstraint.failFast()
                     ? IdValidationState.INVALID_NON_RETRYABLE
                     : IdValidationState.INVALID_RETRYABLE;
