@@ -75,7 +75,7 @@ public class IdGenerator {
         DOMAIN_SPECIFIC_CONSTRAINTS.clear();
     }
 
-    public static void initialize(
+    public synchronized static void initialize(
             int node, List<IdValidationConstraint> globalConstraints, Map<String, List<IdValidationConstraint>> domainSpecificConstraints) {
         nodeId = node;
         IdGenerator.globalConstraints = globalConstraints != null
