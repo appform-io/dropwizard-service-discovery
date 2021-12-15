@@ -17,11 +17,10 @@
 
 package io.appform.dropwizard.discovery.bundle.id;
 
-import com.github.rholder.retry.RetryException;
-import com.github.rholder.retry.Retryer;
-import com.github.rholder.retry.RetryerBuilder;
-import com.github.rholder.retry.StopStrategies;
-import com.google.common.base.Predicates;
+import com.google.common.base.Predicate;
+import dev.failsafe.Failsafe;
+import dev.failsafe.FailsafeExecutor;
+import dev.failsafe.RetryPolicy;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
@@ -29,13 +28,22 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 
 import java.security.SecureRandom;
-import java.util.concurrent.ExecutionException;
+import java.util.Collections;
 
 /**
  * Created by santanu on 2/5/16.
  */
 @Slf4j
 public class NodeIdManager {
+
+    private static final RetryPolicy<Boolean> RETRY_POLICY = RetryPolicy.<Boolean>builder()
+            .withMaxAttempts(-1)
+            .handleIf((Predicate<Throwable>) throwable -> true)
+            .handleResultIf(result -> !result)
+            .build();
+
+    private static final FailsafeExecutor<Boolean> RETRIER = Failsafe.with(
+            Collections.singletonList(RETRY_POLICY));
 
     private final CuratorFramework curatorFramework;
     private final SecureRandom secureRandom;
@@ -58,32 +66,21 @@ public class NodeIdManager {
         } catch (InterruptedException e) {
             log.error("Wait for curator start interrupted", e);
         }
-        Retryer<Boolean> retryer = RetryerBuilder.<Boolean>newBuilder()
-                .retryIfResult(Predicates.equalTo(false))
-                .retryIfException()
-                .withStopStrategy(StopStrategies.neverStop())
-                .build();
-        try {
-            retryer.call(() -> {
-                node = secureRandom.nextInt(Constants.MAX_NUM_NODES);
-                final String path = pathUtils.path(node);
-                try {
-                    curatorFramework.create()
-                            .creatingParentContainersIfNeeded()
-                            .withMode(CreateMode.EPHEMERAL)
-                            .forPath(path);
-                } catch (KeeperException.NodeExistsException e) {
-                    log.warn("Collision on node {}, will retry with new node.", node);
-                    return false;
-                }
-                log.info("Node will be set to node id {}", node);
-                return true;
-            });
-        } catch (RetryException e) {
-            log.error("Error creating node", e);
-        } catch (ExecutionException e) {
-            log.error("Execution exception while creating node", e);
-        }
+        RETRIER.get(() -> {
+            node = secureRandom.nextInt(Constants.MAX_NUM_NODES);
+            final String path = pathUtils.path(node);
+            try {
+                curatorFramework.create()
+                        .creatingParentContainersIfNeeded()
+                        .withMode(CreateMode.EPHEMERAL)
+                        .forPath(path);
+            } catch (KeeperException.NodeExistsException e) {
+                log.warn("Collision on node {}, will retry with new node.", node);
+                return false;
+            }
+            log.info("Node will be set to node id {}", node);
+            return true;
+        });
         return node;
     }
 }
