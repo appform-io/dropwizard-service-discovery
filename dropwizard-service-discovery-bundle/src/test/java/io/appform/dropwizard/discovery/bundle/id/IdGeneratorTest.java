@@ -23,14 +23,10 @@ import io.appform.dropwizard.discovery.bundle.id.constraints.impl.JavaHashCodeBa
 import io.appform.dropwizard.discovery.bundle.id.constraints.impl.PartitionValidator;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.awaitility.Awaitility;
 
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.*;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -96,7 +92,10 @@ public class IdGeneratorTest {
         for(Runner runner : runners) {
             executorService.submit(runner);
         }
-        Thread.sleep(10000);
+        Awaitility.await()
+                .pollInterval(Duration.ofSeconds(10))
+                .timeout(Duration.ofSeconds(11))
+                .until(() -> true);
         executorService.shutdownNow();
 
         long totalCount = runners.stream().mapToLong(Runner::getCount).sum();
@@ -123,7 +122,10 @@ public class IdGeneratorTest {
         for(ConstraintRunner runner : runners) {
             executorService.submit(runner);
         }
-        Thread.sleep(10000);
+        Awaitility.await()
+                .pollInterval(Duration.ofSeconds(10))
+                .timeout(Duration.ofSeconds(11))
+                .until(() -> true);
         executorService.shutdownNow();
 
         long totalCount = runners.stream().mapToLong(ConstraintRunner::getCount).sum();

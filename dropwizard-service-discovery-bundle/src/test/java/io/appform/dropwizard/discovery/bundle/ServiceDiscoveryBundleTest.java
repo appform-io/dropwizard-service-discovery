@@ -23,11 +23,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flipkart.ranger.healthcheck.HealthcheckStatus;
-import com.flipkart.ranger.model.ServiceNode;
-import io.appform.dropwizard.discovery.bundle.ServiceDiscoveryBundle;
-import io.appform.dropwizard.discovery.bundle.ServiceDiscoveryConfiguration;
 import io.dropwizard.Configuration;
-import io.appform.dropwizard.discovery.common.ShardInfo;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
@@ -35,6 +31,7 @@ import io.dropwizard.setup.AdminEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.curator.test.TestingCluster;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.junit.jupiter.api.AfterEach;
@@ -43,12 +40,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 
+import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodeAbsence;
+import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodePresence;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -129,15 +123,19 @@ public class ServiceDiscoveryBundleTest {
 
     @Test
     public void testDiscovery() throws Exception {
-        Optional<ServiceNode<ShardInfo>> info = bundle.getServiceDiscoveryClient().getNode();
-        Assertions.assertTrue(info.isPresent());
-        Assertions.assertEquals("testing", info.get().getNodeData().getEnvironment());
-        Assertions.assertEquals("TestHost", info.get().getHost());
-        Assertions.assertEquals(8021, info.get().getPort());
+
+        assertNodePresence(bundle);
+        val info = bundle.getServiceDiscoveryClient()
+                .getNode()
+                .orElse(null);
+        Assertions.assertNotNull(info);
+        Assertions.assertNotNull(info.getNodeData());
+        Assertions.assertEquals("testing", info.getNodeData().getEnvironment());
+        Assertions.assertEquals("TestHost", info.getHost());
+        Assertions.assertEquals(8021, info.getPort());
+
         status = HealthcheckStatus.unhealthy;
 
-        Thread.sleep(10000);
-        info = bundle.getServiceDiscoveryClient().getNode();
-        Assertions.assertFalse(info.isPresent());
+        assertNodeAbsence(bundle);
     }
 }

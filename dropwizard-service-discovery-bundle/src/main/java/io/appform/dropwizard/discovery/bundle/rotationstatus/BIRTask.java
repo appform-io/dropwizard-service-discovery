@@ -37,7 +37,7 @@ public class BIRTask extends Task {
     }
 
     @Override
-    public void execute(Map<String, List<String>> parameters, PrintWriter printWriter) throws Exception {
+    public void execute(Map<String, List<String>> map, PrintWriter printWriter) throws Exception {
         rotationStatus.bir();
         log.info("Taking node back into rotation on ranger");
     }
