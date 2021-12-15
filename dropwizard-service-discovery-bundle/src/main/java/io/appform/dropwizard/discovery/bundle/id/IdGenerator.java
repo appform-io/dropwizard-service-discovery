@@ -20,13 +20,13 @@ package io.appform.dropwizard.discovery.bundle.id;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
+import dev.failsafe.Failsafe;
+import dev.failsafe.FailsafeExecutor;
+import dev.failsafe.RetryPolicy;
 import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstraint;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import net.jodah.failsafe.Failsafe;
-import net.jodah.failsafe.FailsafeExecutor;
-import net.jodah.failsafe.RetryPolicy;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -49,41 +49,22 @@ import java.util.regex.Pattern;
 public class IdGenerator {
 
     private static final int MINIMUM_ID_LENGTH = 22;
-
-    private enum IdValidationState {
-        VALID,
-        INVALID_RETRYABLE,
-        INVALID_NON_RETRYABLE
-    }
-
-    private static final class IdInfo {
-        int exponent;
-        long time;
-
-        public IdInfo(int exponent, long time) {
-            this.exponent = exponent;
-            this.time = time;
-        }
-    }
-
-    private static final SecureRandom random = new SecureRandom(Long.toBinaryString(System.currentTimeMillis()).getBytes());
-    private static int nodeId;
-    private static final DateTimeFormatter formatter = DateTimeFormat.forPattern("yyMMddHHmmssSSS");
-    private static final CollisionChecker collisionChecker = new CollisionChecker();
-    private static List<IdValidationConstraint> globalConstraints = Collections.emptyList();
-    private static final Map<String, List<IdValidationConstraint>> domainSpecificConstraints = new HashMap<>();
-
-    private static final RetryPolicy<GenerationResult> retryPolicy = new RetryPolicy<GenerationResult>()
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom(Long.toBinaryString(System.currentTimeMillis()).getBytes());
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormat.forPattern("yyMMddHHmmssSSS");
+    private static final CollisionChecker COLLISION_CHECKER = new CollisionChecker();
+    private static final Map<String, List<IdValidationConstraint>> DOMAIN_SPECIFIC_CONSTRAINTS = new HashMap<>();
+    private static final RetryPolicy<GenerationResult> RETRY_POLICY = RetryPolicy.<GenerationResult>builder()
             .withMaxAttempts(512)
             .handleIf((Predicate<Throwable>) throwable -> true)
             .handleResultIf(Objects::isNull)
-            .handleResultIf(generationResult -> generationResult.getState() == IdValidationState.INVALID_RETRYABLE);
-
-    private static final FailsafeExecutor<GenerationResult> retrier = Failsafe.with(
-            Collections.singletonList(retryPolicy));
-
-    private static final String patternString = "(.*)([0-9]{15})([0-9]{4})([0-9]{3})";
-    private static final Pattern pattern = Pattern.compile(patternString);
+            .handleResultIf(generationResult -> generationResult.getState() == IdValidationState.INVALID_RETRYABLE)
+            .build();
+    private static final FailsafeExecutor<GenerationResult> RETRIER = Failsafe.with(
+            Collections.singletonList(RETRY_POLICY));
+    private static final String PATTERN_STRING = "(.*)([0-9]{15})([0-9]{4})([0-9]{3})";
+    private static final Pattern PATTERN = Pattern.compile(PATTERN_STRING);
+    private static int nodeId;
+    private static List<IdValidationConstraint> globalConstraints = Collections.emptyList();
 
     public static void initialize(int node) {
         nodeId = node;
@@ -91,7 +72,7 @@ public class IdGenerator {
 
     public static synchronized void cleanUp() {
         globalConstraints.clear();
-        domainSpecificConstraints.clear();
+        DOMAIN_SPECIFIC_CONSTRAINTS.clear();
     }
 
     public static void initialize(
@@ -100,7 +81,7 @@ public class IdGenerator {
         IdGenerator.globalConstraints = globalConstraints != null
                 ? globalConstraints
                 : Collections.emptyList();
-        IdGenerator.domainSpecificConstraints.putAll(domainSpecificConstraints);
+        IdGenerator.DOMAIN_SPECIFIC_CONSTRAINTS.putAll(domainSpecificConstraints);
     }
 
     public static synchronized void registerGlobalConstraints(IdValidationConstraint... constraints) {
@@ -121,10 +102,10 @@ public class IdGenerator {
 
     public static synchronized void registerDomainSpecificConstraints(String domain, List<IdValidationConstraint> validationConstraints) {
         Preconditions.checkArgument(null != validationConstraints && !validationConstraints.isEmpty());
-        if (!domainSpecificConstraints.containsKey(domain)) {
-            domainSpecificConstraints.put(domain, new ArrayList<>());
+        if (!DOMAIN_SPECIFIC_CONSTRAINTS.containsKey(domain)) {
+            DOMAIN_SPECIFIC_CONSTRAINTS.put(domain, new ArrayList<>());
         }
-        domainSpecificConstraints.get(domain).addAll(validationConstraints);
+        DOMAIN_SPECIFIC_CONSTRAINTS.get(domain).addAll(validationConstraints);
     }
 
     /**
@@ -136,7 +117,7 @@ public class IdGenerator {
     public static Id generate(String prefix) {
         final IdInfo idInfo = random();
         DateTime dateTime = new DateTime(idInfo.time);
-        final String id = String.format("%s%s%04d%03d", prefix, formatter.print(dateTime), nodeId, idInfo.exponent);
+        final String id = String.format("%s%s%04d%03d", prefix, DATE_TIME_FORMATTER.print(dateTime), nodeId, idInfo.exponent);
         return Id.builder()
                 .id(id)
                 .exponent(idInfo.exponent)
@@ -155,7 +136,7 @@ public class IdGenerator {
      * @return
      */
     public static Optional<Id> generateWithConstraints(String prefix, String domain) {
-        return generateWithConstraints(prefix, domainSpecificConstraints.getOrDefault(domain, Collections.emptyList()), true);
+        return generateWithConstraints(prefix, DOMAIN_SPECIFIC_CONSTRAINTS.getOrDefault(domain, Collections.emptyList()), true);
     }
 
     /**
@@ -169,7 +150,7 @@ public class IdGenerator {
      * @return Id if it could be generated
      */
     public static Optional<Id> generateWithConstraints(String prefix, String domain, boolean skipGlobal) {
-        return generateWithConstraints(prefix, domainSpecificConstraints.getOrDefault(domain, Collections.emptyList()), skipGlobal);
+        return generateWithConstraints(prefix, DOMAIN_SPECIFIC_CONSTRAINTS.getOrDefault(domain, Collections.emptyList()), skipGlobal);
     }
 
     /**
@@ -197,13 +178,13 @@ public class IdGenerator {
             return Optional.empty();
         }
         try {
-            Matcher matcher = pattern.matcher(idString);
+            Matcher matcher = PATTERN.matcher(idString);
             if (matcher.find()) {
                 return Optional.of(Id.builder()
                         .id(idString)
                         .node(Integer.parseInt(matcher.group(3)))
                         .exponent(Integer.parseInt(matcher.group(4)))
-                        .generatedDate(formatter.parseDateTime(matcher.group(2)).toDate())
+                        .generatedDate(DATE_TIME_FORMATTER.parseDateTime(matcher.group(2)).toDate())
                         .build());
             }
             return Optional.empty();
@@ -211,12 +192,6 @@ public class IdGenerator {
             log.warn("Could not parse idString {}", e.getMessage());
             return Optional.empty();
         }
-    }
-
-    @Data
-    private static class GenerationResult {
-        private final Id id;
-        private final IdValidationState state;
     }
 
     /**
@@ -230,12 +205,12 @@ public class IdGenerator {
      * @return Id if it could be generated
      */
     public static Optional<Id> generateWithConstraints(String prefix, final List<IdValidationConstraint> inConstraints, boolean skipGlobal) {
-        val generationResult = retrier.get(
+        val generationResult = RETRIER.get(
                 () -> {
                     Id id = generate(prefix);
                     return new GenerationResult(id, validateId(inConstraints, id, skipGlobal));
                 });
-        if (generationResult == null || generationResult.getState() != IdValidationState.VALID){
+        if (generationResult == null || generationResult.getState() != IdValidationState.VALID) {
             return Optional.empty();
         }
         return Optional.of(generationResult.getId());
@@ -246,8 +221,8 @@ public class IdGenerator {
         long time;
         do {
             time = System.currentTimeMillis();
-            randomGen = random.nextInt(Constants.MAX_ID_PER_MS);
-        } while (!collisionChecker.check(time, randomGen));
+            randomGen = SECURE_RANDOM.nextInt(Constants.MAX_ID_PER_MS);
+        } while (!COLLISION_CHECKER.check(time, randomGen));
         return new IdInfo(randomGen, time);
     }
 
@@ -279,5 +254,27 @@ public class IdGenerator {
                     : IdValidationState.INVALID_RETRYABLE;
         }
         return IdValidationState.VALID;
+    }
+
+    private enum IdValidationState {
+        VALID,
+        INVALID_RETRYABLE,
+        INVALID_NON_RETRYABLE
+    }
+
+    private static final class IdInfo {
+        int exponent;
+        long time;
+
+        public IdInfo(int exponent, long time) {
+            this.exponent = exponent;
+            this.time = time;
+        }
+    }
+
+    @Data
+    private static class GenerationResult {
+        private final Id id;
+        private final IdValidationState state;
     }
 }
