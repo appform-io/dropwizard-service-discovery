@@ -27,10 +27,13 @@ import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstra
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apache.zookeeper.Op;
+import org.checkerframework.checker.nullness.Opt;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+import javax.swing.text.html.Option;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -205,15 +208,13 @@ public class IdGenerator {
      * @return Id if it could be generated
      */
     public static Optional<Id> generateWithConstraints(String prefix, final List<IdValidationConstraint> inConstraints, boolean skipGlobal) {
-        val generationResult = RETRIER.get(
-                () -> {
-                    Id id = generate(prefix);
-                    return new GenerationResult(id, validateId(inConstraints, id, skipGlobal));
-                });
-        if (generationResult == null || generationResult.getState() != IdValidationState.VALID) {
-            return Optional.empty();
-        }
-        return Optional.of(generationResult.getId());
+        return Optional.ofNullable(RETRIER.get(
+                        () -> {
+                            Id id = generate(prefix);
+                            return new GenerationResult(id, validateId(inConstraints, id, skipGlobal));
+                        }))
+                .filter(generationResult -> generationResult.getState() == IdValidationState.VALID)
+                .map(GenerationResult::getId);
     }
 
     private static synchronized IdInfo random() {
