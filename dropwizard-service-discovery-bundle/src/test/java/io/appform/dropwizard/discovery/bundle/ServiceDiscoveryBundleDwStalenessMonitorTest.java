@@ -35,17 +35,17 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.curator.test.TestingCluster;
 import org.eclipse.jetty.util.component.LifeCycle;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+
 import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodeAbsence;
 import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodePresence;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -94,7 +94,7 @@ public class ServiceDiscoveryBundleDwStalenessMonitorTest {
     private HealthcheckStatus status = HealthcheckStatus.healthy;
     private AtomicBoolean healthySucceeded = new AtomicBoolean(false);
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         healthChecks.register("healthy-once-but-then-sleep5", new HealthCheck() {
 
@@ -138,7 +138,7 @@ public class ServiceDiscoveryBundleDwStalenessMonitorTest {
         bundle.registerHealthcheck(() -> status);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         for (LifeCycle lifeCycle: lifecycleEnvironment.getManagedObjects()){
             lifeCycle.stop();
@@ -152,11 +152,11 @@ public class ServiceDiscoveryBundleDwStalenessMonitorTest {
         val info = bundle.getServiceDiscoveryClient()
                 .getNode()
                 .orElse(null);
-        assertNotNull(info);
-        assertNotNull(info.getNodeData());
-        assertEquals("testing", info.getNodeData().getEnvironment());
-        assertEquals("CustomHost", info.getHost());
-        assertEquals(21000, info.getPort());
+        Assertions.assertNotNull(info);
+        Assertions.assertNotNull(info.getNodeData());
+        Assertions.assertEquals("testing", info.getNodeData().getEnvironment());
+        Assertions.assertEquals("CustomHost", info.getHost());
+        Assertions.assertEquals(21000, info.getPort());
         healthySucceeded.set(true);
 
         /* once the first check has succeeded it should get unhealthy and hence no node */

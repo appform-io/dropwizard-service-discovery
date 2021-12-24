@@ -36,15 +36,15 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.curator.test.TestingCluster;
 import org.eclipse.jetty.util.component.LifeCycle;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
 import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodeAbsence;
 import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodePresence;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -83,7 +83,7 @@ public class ServiceDiscoveryBundleRotationTest {
     private final TestingCluster testingCluster = new TestingCluster(1);
     private RotationStatus rotationStatus;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
 
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
@@ -115,7 +115,7 @@ public class ServiceDiscoveryBundleRotationTest {
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         for (LifeCycle lifeCycle: lifecycleEnvironment.getManagedObjects()){
             lifeCycle.stop();
@@ -130,19 +130,21 @@ public class ServiceDiscoveryBundleRotationTest {
         val info = bundle.getServiceDiscoveryClient()
                 .getNode()
                 .orElse(null);
-        assertNotNull(info);
-        assertNotNull(info.getNodeData());
-        assertEquals("testing", info.getNodeData().getEnvironment());
-        assertEquals("TestHost", info.getHost());
-        assertEquals(8021, info.getPort());
+        Assertions.assertNotNull(info);
+        Assertions.assertNotNull(info.getNodeData());
+        Assertions.assertEquals("testing", info.getNodeData().getEnvironment());
+        Assertions.assertEquals("TestHost", info.getHost());
+        Assertions.assertEquals(8021, info.getPort());
 
         OORTask oorTask = new OORTask(rotationStatus);
         oorTask.execute(null, null);
+
 
         assertNodeAbsence(bundle);
 
         BIRTask birTask = new BIRTask(rotationStatus);
         birTask.execute(null, null);
+
 
         assertNodePresence(bundle);
     }

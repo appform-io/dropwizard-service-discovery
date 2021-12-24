@@ -116,7 +116,7 @@
         <dropwizard.version>2.0.23</dropwizard.version>
         <lombok.version>1.18.16</lombok.version>
         <guava.version>30.1.1-jre</guava.version>
-        <junit.version>4.13.1</junit.version>
+        <junit.version>5.7.0</junit.version>
         <ranger.version>0.6.3</ranger.version>
         <curator.version>4.2.0</curator.version>
         <failsafe.version>3.1.0</failsafe.version>
@@ -179,9 +179,10 @@
             <version>${curator.version}</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
