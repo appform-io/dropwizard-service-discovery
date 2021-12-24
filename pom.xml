@@ -119,6 +119,7 @@
         <junit.version>5.7.0</junit.version>
         <ranger.version>0.6.3</ranger.version>
         <curator.version>4.2.0</curator.version>
+        <failsafe.version>3.1.0</failsafe.version>
     </properties>
 
     <dependencyManagement>
