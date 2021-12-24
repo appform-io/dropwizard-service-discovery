@@ -25,6 +25,7 @@ import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstraint;
 import lombok.Data;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.zookeeper.Op;
@@ -263,7 +264,8 @@ public class IdGenerator {
         INVALID_NON_RETRYABLE
     }
 
-    private static final class IdInfo {
+    @Value
+    private static class IdInfo {
         int exponent;
         long time;
 
@@ -273,9 +275,9 @@ public class IdGenerator {
         }
     }
 
-    @Data
+    @Value
     private static class GenerationResult {
-        private final Id id;
-        private final IdValidationState state;
+        Id id;
+        IdValidationState state;
     }
 }
