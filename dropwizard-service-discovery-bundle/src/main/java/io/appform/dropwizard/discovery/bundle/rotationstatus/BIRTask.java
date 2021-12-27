@@ -30,7 +30,7 @@ import java.util.Map;
  */
 @Slf4j
 public class BIRTask extends Task {
-    private RotationStatus rotationStatus;
+    private final RotationStatus rotationStatus;
     public BIRTask(RotationStatus rotationStatus) {
         super("ranger-bir");
         this.rotationStatus = rotationStatus;

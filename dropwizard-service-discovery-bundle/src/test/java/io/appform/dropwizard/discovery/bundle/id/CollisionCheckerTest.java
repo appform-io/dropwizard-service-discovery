@@ -24,10 +24,10 @@ import org.junit.jupiter.api.Test;
 /**
  * Test on {@link CollisionChecker}
  */
-public class CollisionCheckerTest {
+class CollisionCheckerTest {
 
     @Test
-    public void testCheck() throws Exception {
+    void testCheck() throws Exception {
         CollisionChecker collisionChecker = new CollisionChecker();
         Assertions.assertTrue(collisionChecker.check(100, 1));
         Assertions.assertFalse(collisionChecker.check(100, 1));

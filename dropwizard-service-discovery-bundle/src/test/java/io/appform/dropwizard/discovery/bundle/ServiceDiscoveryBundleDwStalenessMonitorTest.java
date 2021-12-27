@@ -51,7 +51,7 @@ import static org.mockito.Mockito.*;
 
 
 @Slf4j
-public class ServiceDiscoveryBundleDwStalenessMonitorTest {
+class ServiceDiscoveryBundleDwStalenessMonitorTest {
 
     private final HealthCheckRegistry healthChecks = new HealthCheckRegistry();
     private final JerseyEnvironment jerseyEnvironment = mock(JerseyEnvironment.class);
@@ -91,11 +91,10 @@ public class ServiceDiscoveryBundleDwStalenessMonitorTest {
 
     private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
     private final TestingCluster testingCluster = new TestingCluster(1);
-    private HealthcheckStatus status = HealthcheckStatus.healthy;
-    private AtomicBoolean healthySucceeded = new AtomicBoolean(false);
+    private final AtomicBoolean healthySucceeded = new AtomicBoolean(false);
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         healthChecks.register("healthy-once-but-then-sleep5", new HealthCheck() {
 
             @Override
@@ -135,11 +134,11 @@ public class ServiceDiscoveryBundleDwStalenessMonitorTest {
         for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()){
             lifeCycle.start();
         }
-        bundle.registerHealthcheck(() -> status);
+        bundle.registerHealthcheck(() -> HealthcheckStatus.healthy);
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         for (LifeCycle lifeCycle: lifecycleEnvironment.getManagedObjects()){
             lifeCycle.stop();
         }
@@ -147,7 +146,7 @@ public class ServiceDiscoveryBundleDwStalenessMonitorTest {
     }
 
     @Test
-    public void testDiscovery() throws Exception {
+    void testDiscovery() throws Exception {
         assertNodePresence(bundle);
         val info = bundle.getServiceDiscoveryClient()
                 .getNode()

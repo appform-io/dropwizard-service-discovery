@@ -43,6 +43,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
+
 import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodeAbsence;
 import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodePresence;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,7 +52,7 @@ import static org.mockito.Mockito.*;
 
 
 @Slf4j
-public class ServiceDiscoveryBundleRotationTest {
+class ServiceDiscoveryBundleRotationTest {
 
     private final HealthCheckRegistry healthChecks = mock(HealthCheckRegistry.class);
     private final JerseyEnvironment jerseyEnvironment = mock(JerseyEnvironment.class);
@@ -84,7 +86,7 @@ public class ServiceDiscoveryBundleRotationTest {
     private RotationStatus rotationStatus;
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
 
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);
@@ -116,7 +118,7 @@ public class ServiceDiscoveryBundleRotationTest {
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         for (LifeCycle lifeCycle: lifecycleEnvironment.getManagedObjects()){
             lifeCycle.stop();
         }
@@ -124,7 +126,7 @@ public class ServiceDiscoveryBundleRotationTest {
     }
 
     @Test
-    public void testDiscovery() throws Exception {
+    void testDiscovery() throws Exception {
 
         assertNodePresence(bundle);
         val info = bundle.getServiceDiscoveryClient()
@@ -137,13 +139,13 @@ public class ServiceDiscoveryBundleRotationTest {
         Assertions.assertEquals(8021, info.getPort());
 
         OORTask oorTask = new OORTask(rotationStatus);
-        oorTask.execute(null, null);
+        oorTask.execute(Collections.emptyMap(), null);
 
 
         assertNodeAbsence(bundle);
 
         BIRTask birTask = new BIRTask(rotationStatus);
-        birTask.execute(null, null);
+        birTask.execute(Collections.emptyMap(), null);
 
 
         assertNodePresence(bundle);

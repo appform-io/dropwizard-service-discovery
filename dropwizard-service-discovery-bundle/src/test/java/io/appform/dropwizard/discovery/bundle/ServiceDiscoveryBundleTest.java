@@ -48,7 +48,7 @@ import static org.mockito.Mockito.*;
 
 
 @Slf4j
-public class ServiceDiscoveryBundleTest {
+class ServiceDiscoveryBundleTest {
 
     private final HealthCheckRegistry healthChecks = mock(HealthCheckRegistry.class);
     private final JerseyEnvironment jerseyEnvironment = mock(JerseyEnvironment.class);
@@ -82,7 +82,7 @@ public class ServiceDiscoveryBundleTest {
     private HealthcheckStatus status = HealthcheckStatus.healthy;
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
 
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);
@@ -114,7 +114,7 @@ public class ServiceDiscoveryBundleTest {
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         for (LifeCycle lifeCycle: lifecycleEnvironment.getManagedObjects()){
             lifeCycle.stop();
         }
@@ -122,7 +122,7 @@ public class ServiceDiscoveryBundleTest {
     }
 
     @Test
-    public void testDiscovery() throws Exception {
+    void testDiscovery() throws Exception {
 
         assertNodePresence(bundle);
         val info = bundle.getServiceDiscoveryClient()

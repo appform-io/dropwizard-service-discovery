@@ -19,10 +19,10 @@ package io.appform.dropwizard.discovery.bundle;
 
 import com.google.common.base.Strings;
 import lombok.*;
-import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -64,12 +64,11 @@ public class ServiceDiscoveryConfiguration {
 
     @Min(0)
     @Max(600)
-    @Deprecated
     private long initialDelaySeconds;
 
     private boolean initialRotationStatus = true;
 
-    private int dropwizardCheckInterval = Constants.DEFAULT_DW_CHECK_INTERVAl;
+    private int dropwizardCheckInterval = Constants.DEFAULT_DW_CHECK_INTERVAL;
 
     private int dropwizardCheckStaleness;
 
@@ -106,7 +105,7 @@ public class ServiceDiscoveryConfiguration {
         this.initialDelaySeconds = initialDelaySeconds;
         this.initialRotationStatus = initialRotationStatus;
         this.dropwizardCheckInterval = dropwizardCheckInterval == 0
-                                       ? Constants.DEFAULT_DW_CHECK_INTERVAl
+                                       ? Constants.DEFAULT_DW_CHECK_INTERVAL
                                        : dropwizardCheckInterval;
         this.dropwizardCheckStaleness = dropwizardCheckStaleness;
     }

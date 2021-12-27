@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Current rotation status
  */
 public class RotationStatus {
-    private AtomicBoolean inRotation;
+    private final AtomicBoolean inRotation;
 
     public RotationStatus(boolean initialStatus) {
         inRotation = new AtomicBoolean(initialStatus);

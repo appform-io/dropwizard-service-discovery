@@ -29,7 +29,7 @@ import java.util.Map;
  */
 @Slf4j
 public class OORTask extends Task {
-    private RotationStatus rotationStatus;
+    private final RotationStatus rotationStatus;
     public OORTask(RotationStatus rotationStatus) {
         super("ranger-oor");
         this.rotationStatus = rotationStatus;

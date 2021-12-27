@@ -24,25 +24,14 @@ import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstraint;
-import lombok.Data;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
-import org.apache.zookeeper.Op;
-import org.checkerframework.checker.nullness.Opt;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
-import javax.swing.text.html.Option;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -79,7 +68,7 @@ public class IdGenerator {
         DOMAIN_SPECIFIC_CONSTRAINTS.clear();
     }
 
-    public synchronized static void initialize(
+    public static synchronized void initialize(
             int node, List<IdValidationConstraint> globalConstraints, Map<String, List<IdValidationConstraint>> domainSpecificConstraints) {
         nodeId = node;
         IdGenerator.globalConstraints = globalConstraints != null
@@ -106,10 +95,8 @@ public class IdGenerator {
 
     public static synchronized void registerDomainSpecificConstraints(String domain, List<IdValidationConstraint> validationConstraints) {
         Preconditions.checkArgument(null != validationConstraints && !validationConstraints.isEmpty());
-        if (!DOMAIN_SPECIFIC_CONSTRAINTS.containsKey(domain)) {
-            DOMAIN_SPECIFIC_CONSTRAINTS.put(domain, new ArrayList<>());
-        }
-        DOMAIN_SPECIFIC_CONSTRAINTS.get(domain).addAll(validationConstraints);
+        DOMAIN_SPECIFIC_CONSTRAINTS.computeIfAbsent(domain, key -> new ArrayList<>())
+                .addAll(validationConstraints);
     }
 
     /**
@@ -137,7 +124,7 @@ public class IdGenerator {
      *
      * @param prefix String prefix
      * @param domain Domain for constraint selection
-     * @return
+     * @return Return generated id or empty if it was impossible to satisfy constraints and generate
      */
     public static Optional<Id> generateWithConstraints(String prefix, String domain) {
         return generateWithConstraints(prefix, DOMAIN_SPECIFIC_CONSTRAINTS.getOrDefault(domain, Collections.emptyList()), true);
@@ -163,7 +150,7 @@ public class IdGenerator {
      * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
      *
      * @param prefix        String prefix
-     * @param inConstraints Constraints that need to be validate.
+     * @param inConstraints Constraints that need to be validated.
      * @return Id if it could be generated
      */
     public static Optional<Id> generateWithConstraints(String prefix, final List<IdValidationConstraint> inConstraints) {

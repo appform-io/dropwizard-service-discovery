@@ -50,7 +50,7 @@ import static org.mockito.Mockito.*;
 
 
 @Slf4j
-public class ServiceDiscoveryBundleDwMonitorTest {
+class ServiceDiscoveryBundleDwMonitorTest {
 
     private final HealthCheckRegistry healthChecks = new HealthCheckRegistry();
     private final JerseyEnvironment jerseyEnvironment = mock(JerseyEnvironment.class);
@@ -94,7 +94,7 @@ public class ServiceDiscoveryBundleDwMonitorTest {
     private final HealthcheckStatus status = HealthcheckStatus.healthy;
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         healthChecks.register("twice-healthy-only", new HealthCheck() {
             private AtomicInteger counter = new AtomicInteger(2);
             @Override
@@ -137,7 +137,7 @@ public class ServiceDiscoveryBundleDwMonitorTest {
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         for (LifeCycle lifeCycle: lifecycleEnvironment.getManagedObjects()){
             lifeCycle.stop();
         }
@@ -145,7 +145,7 @@ public class ServiceDiscoveryBundleDwMonitorTest {
     }
 
     @Test
-    public void testDiscovery() throws Exception {
+    void testDiscovery() throws Exception {
         assertNodePresence(bundle);
         val info = bundle.getServiceDiscoveryClient()
                 .getNode()

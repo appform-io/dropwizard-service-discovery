@@ -20,6 +20,7 @@ package io.appform.dropwizard.discovery.bundle;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flipkart.ranger.ServiceProviderBuilders;
 import com.flipkart.ranger.healthcheck.Healthcheck;
+import com.flipkart.ranger.healthcheck.HealthcheckStatus;
 import com.flipkart.ranger.healthservice.TimeEntity;
 import com.flipkart.ranger.healthservice.monitor.IsolatedHealthMonitor;
 import com.flipkart.ranger.serviceprovider.ServiceProvider;
@@ -90,8 +91,8 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
 
     protected ServiceDiscoveryBundle(List<IdValidationConstraint> globalIdConstraints) {
         this.globalIdConstraints = globalIdConstraints != null
-                ? globalIdConstraints
-                : Collections.emptyList();
+                                   ? globalIdConstraints
+                                   : Collections.emptyList();
     }
 
     @Override
@@ -122,7 +123,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 serviceName,
                 hostname,
                 port
-        );
+                                              );
         serviceDiscoveryClient = buildDiscoveryClient(
                 environment,
                 namespace,
@@ -142,10 +143,11 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
 
     protected abstract String getServiceName(T configuration);
 
-    protected List<IsolatedHealthMonitor> getHealthMonitors() {
+    protected List<IsolatedHealthMonitor<HealthcheckStatus>> getHealthMonitors() {
         return Lists.newArrayList();
     }
 
+    @SuppressWarnings("unused")
     protected int getPort(T configuration) {
         Preconditions.checkArgument(
                 Constants.DEFAULT_PORT != serviceDiscoveryConfiguration.getPublishedPort()
@@ -200,14 +202,13 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .environment(serviceDiscoveryConfiguration.getEnvironment())
                 .build();
         val initialDelayForMonitor = serviceDiscoveryConfiguration.getInitialDelaySeconds() > 1
-                ? serviceDiscoveryConfiguration.getInitialDelaySeconds() - 1
-                : 0;
+                                     ? serviceDiscoveryConfiguration.getInitialDelaySeconds() - 1
+                                     : 0;
         val dwMonitoringInterval = serviceDiscoveryConfiguration.getDropwizardCheckInterval() == 0
-                ? Constants.DEFAULT_DW_CHECK_INTERVAl
-                : serviceDiscoveryConfiguration.getDropwizardCheckInterval();
-        val dwMonitoringStaleness = serviceDiscoveryConfiguration.getDropwizardCheckStaleness() < dwMonitoringInterval + 1
-                ? dwMonitoringInterval + 1
-                : serviceDiscoveryConfiguration.getDropwizardCheckStaleness();
+                                   ? Constants.DEFAULT_DW_CHECK_INTERVAL
+                                   : serviceDiscoveryConfiguration.getDropwizardCheckInterval();
+        val dwMonitoringStaleness
+                = Math.max(serviceDiscoveryConfiguration.getDropwizardCheckStaleness(), dwMonitoringInterval + 1);
         val serviceProviderBuilder = ServiceProviderBuilders.<ShardInfo>shardedServiceProviderBuilder()
                 .withCuratorFramework(curator)
                 .withNamespace(namespace)
@@ -231,7 +232,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .withIsolatedHealthMonitor(
                         new DropwizardHealthMonitor(
                                 new TimeEntity(initialDelayForMonitor, dwMonitoringInterval, TimeUnit.SECONDS),
-                                dwMonitoringStaleness * 1_000, environment))
+                                dwMonitoringStaleness * 1_000L, environment))
                 .withHealthUpdateIntervalMs(serviceDiscoveryConfiguration.getRefreshTimeMs())
                 .withStaleUpdateThresholdMs(10000);
 
