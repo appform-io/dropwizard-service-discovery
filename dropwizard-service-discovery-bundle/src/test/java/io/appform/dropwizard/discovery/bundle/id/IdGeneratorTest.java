@@ -24,7 +24,8 @@ import io.appform.dropwizard.discovery.bundle.id.constraints.impl.PartitionValid
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
-
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.time.*;
 import java.util.Collections;
@@ -39,7 +40,7 @@ import java.util.concurrent.Executors;
  * Test for {@link IdGenerator}
  */
 @Slf4j
-public class IdGeneratorTest {
+class IdGeneratorTest {
 
     @Getter
     private static final class Runner implements Callable<Long> {
@@ -78,7 +79,7 @@ public class IdGeneratorTest {
     }
 
     @Test
-    public void testGenerate() throws Exception {
+    void testGenerate() {
         IdGenerator.initialize(23);
         int numRunners = 20;
 
@@ -108,7 +109,7 @@ public class IdGeneratorTest {
 
 
     @Test
-    public void testGenerateWithConstraintsNoConstraint() throws Exception {
+    void testGenerateWithConstraintsNoConstraint() {
         IdGenerator.initialize(23);
         int numRunners = 20;
 
@@ -137,7 +138,7 @@ public class IdGeneratorTest {
     }
 
     @Test
-    public void testConstraintFailure() {
+    void testConstraintFailure() {
         IdGenerator.initialize(23);
         Assertions.assertFalse(IdGenerator.generateWithConstraints(
                 "TST",
@@ -146,7 +147,7 @@ public class IdGeneratorTest {
     }
 
     @Test
-    public void testParseFailure() {
+    void testParseFailure() {
         //Null or Empty String
         Assertions.assertFalse(IdGenerator.parse(null).isPresent());
         Assertions.assertFalse(IdGenerator.parse("").isPresent());
@@ -171,7 +172,7 @@ public class IdGeneratorTest {
     }
 
     @Test
-    public void testParseSuccess(){
+    void testParseSuccess(){
         String idString = "ABC2011250959030643972247";
         Optional<Id> idOptional = IdGenerator.parse(idString);
         Assertions.assertTrue(idOptional.isPresent());
@@ -185,7 +186,7 @@ public class IdGeneratorTest {
     }
 
     @Test
-    public void testParseSuccessAfterGeneration(){
+    void testParseSuccessAfterGeneration(){
         Id generatedId = IdGenerator.generate("TEST123");
         Optional<Id> parsedIdOptional = IdGenerator.parse(generatedId.getId());
         Assertions.assertTrue(parsedIdOptional.isPresent());
