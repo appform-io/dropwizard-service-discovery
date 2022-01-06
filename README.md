@@ -11,13 +11,22 @@ Provides service discovery to dropwizard services. It uses [Ranger](https://gith
 </dependency>
 ```
 
-## Dependency for client
+## Dependency for ZK client
 ```
-<dependency>
-    <groupId>io.appform.dropwizard.discovery</groupId>
-    <artifactId>dropwizard-service-discovery-client</artifactId>
-    <version>3.0.0-SNAPSHOT</version>
-</dependency>
+ <dependency>
+        <groupId>io.appform.ranger</groupId>
+        <artifactId>ranger-zk-client</artifactId>
+        <version>1.0-RC3</version>
+  </dependency>
+```
+
+## Dependency for Http client
+```
+ <dependency>
+        <groupId>io.appform.ranger</groupId>
+        <artifactId>ranger-http-client</artifactId>
+        <version>1.0-RC3</version>
+  </dependency>
 ```
 
 ## How to use the bundle
