@@ -23,7 +23,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import io.appform.dropwizard.discovery.bundle.criteria.HierarchicalEnvAwareCriteria;
 import io.appform.dropwizard.discovery.bundle.healthchecks.InitialDelayChecker;
 import io.appform.dropwizard.discovery.bundle.healthchecks.InternalHealthChecker;
 import io.appform.dropwizard.discovery.bundle.healthchecks.RotationCheck;
@@ -153,8 +152,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     protected abstract String getServiceName(T configuration);
 
     /**
-        Override the following if you require. There is a {@link HierarchicalEnvAwareCriteria}
-        that you could use as well, should you desire.
+        Override the following if you require.
      **/
     protected Predicate<ShardInfo> getInitialCriteria(T configuration){
         return shardInfo -> true;
