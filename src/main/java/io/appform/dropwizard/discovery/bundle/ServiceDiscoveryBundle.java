@@ -225,7 +225,6 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 )
                 .alwaysUseInitialCriteria(mergeWithInitialCriteria)
                 .build();
-
     }
 
     private ServiceProvider<ShardInfo, ZkNodeDataSerializer<ShardInfo>> buildServiceProvider(

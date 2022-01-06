@@ -16,7 +16,7 @@ Provides service discovery to dropwizard services. It uses [Ranger](https://gith
 <dependency>
     <groupId>io.appform.dropwizard.discovery</groupId>
     <artifactId>dropwizard-service-discovery-client</artifactId>
-    <version>2.0.28-1</version>
+    <version>3.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -101,16 +101,33 @@ Use GET /instances to see all instances that have been registered to your servic
 
 ## How to use the client
 The client needs to be created and started. Once started it should never be stopped before the using service
-itself dies or no queries will ever be made to ZK. Creation of the client is expensive.
+itself dies or no queries will ever be made to ZK. Creation of the client is expensive. 
+
+Imagining ShardInfo is your nodeData.
 
 ```
-ServiceDiscoveryClient client = ServiceDiscoveryClient.fromConnectionString()
+RangerClient client = SimpleRangerZKClient.<ShardInfo>builder()
                 .connectionString("zk-server1.mycompany.net:2181, zk-server2.mycompany.net:2181")
                 .namespace("mycompany")
                 .serviceName("some-service")
                 .environment("production")
                 .objectMapper(new ObjectMapper())
-                .build();
+                .deserializer(
+                        data -> {
+                            try {
+                                return environment.getObjectMapper().readValue(data, new TypeReference<ServiceNode<ShardInfo>>() {
+                                });
+                            } catch (IOException e) {
+                                log.warn("Error parsing node data with value {}", new String(data));
+                            }
+                            return null;
+                        }
+                )
+                .initialCriteria(
+                        shardInfo -> true
+                )
+                .alwaysUseInitialCriteria(true)
+                .build(); 
 ```
 
 Start the client
