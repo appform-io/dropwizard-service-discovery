@@ -7,7 +7,7 @@ Provides service discovery to dropwizard services. It uses [Ranger](https://gith
 <dependency>
     <groupId>io.appform.dropwizard.discovery</groupId>
     <artifactId>dropwizard-service-discovery-bundle</artifactId>
-    <version>2.0.28-1</version>
+    <version>2.0.28-2.RC1</version>
 </dependency>
 ```
 
@@ -64,7 +64,7 @@ public class App extends Application<AppConfig> {
             @Override
             protected String getServiceName(AppConfig appConfig) {
                 //Read from some config or hardcode your service name
-                //This wi;l be used by clients to lookup instances for the service
+                //This will be used by clients to lookup instances for the service
                 return "some-service";
             }
 
