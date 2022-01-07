@@ -7,7 +7,7 @@
     <groupId>io.appform.dropwizard.discovery</groupId>
     <artifactId>dropwizard-service-discovery</artifactId>
     <packaging>jar</packaging>
-    <version>2.0.28-2.RC1</version>
+    <version>2.0.28-2.RC2</version>
 
     <name>Dropwizard Service Discovery</name>
     <url>https://github.com/santanusinha/dropwizard-service-discovery</url>
@@ -165,6 +165,12 @@
             <artifactId>curator-test</artifactId>
             <version>${curator.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
