@@ -30,6 +30,7 @@ import io.appform.dropwizard.discovery.bundle.id.IdGenerator;
 import io.appform.dropwizard.discovery.bundle.id.NodeIdManager;
 import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstraint;
 import io.appform.dropwizard.discovery.bundle.monitors.DropwizardHealthMonitor;
+import io.appform.dropwizard.discovery.bundle.monitors.DropwizardMetricComparator;
 import io.appform.dropwizard.discovery.bundle.monitors.DropwizardServerStartupCheck;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.BIRTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.DropwizardServerStatus;
@@ -151,6 +152,20 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
 
     protected abstract String getServiceName(T configuration);
 
+    private IsolatedHealthMonitor<HealthcheckStatus> getLivelinessMonitor(Environment environment){
+        if(null == serviceDiscoveryConfiguration.getLivelinessCheck()) return null;
+        val livelinessCheck = serviceDiscoveryConfiguration.getLivelinessCheck();
+        val stalenessInterval
+                = Math.max(livelinessCheck.getStalesnessInterval(), livelinessCheck.getCheckInterval() + 1);
+        return DropwizardMetricComparator.builder()
+                .runInterval(new TimeEntity(livelinessCheck.getInitialDelayForMonitor(), livelinessCheck.getCheckInterval(), TimeUnit.SECONDS))
+                .stalenessAllowedInMillis(stalenessInterval * 1_000L)
+                .environment(environment)
+                .metricName(Constants.THREAD_UTIL_GAUGE)
+                .unhealthyThreshold(livelinessCheck.getUnhealthyThreshold())
+                .build();
+    }
+
     /**
         Override the following if you require.
      **/
@@ -270,10 +285,16 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .withHealthUpdateIntervalMs(serviceDiscoveryConfiguration.getRefreshTimeMs())
                 .withStaleUpdateThresholdMs(10000);
 
+        val livelinessMonitor = getLivelinessMonitor(environment);
+        if(null != livelinessMonitor){
+            serviceProviderBuilder.withIsolatedHealthMonitor(livelinessMonitor);
+        }
+
         val healthMonitors = getHealthMonitors();
         if (healthMonitors != null && !healthMonitors.isEmpty()) {
             healthMonitors.forEach(serviceProviderBuilder::withIsolatedHealthMonitor);
         }
+
         return serviceProviderBuilder.build();
     }
 

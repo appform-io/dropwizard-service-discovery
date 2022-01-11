@@ -17,13 +17,19 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import io.appform.dropwizard.discovery.bundle.config.LivelinessCheck;
 import lombok.*;
 
+import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 /**
  * Ranger configuration.
@@ -72,6 +78,11 @@ public class ServiceDiscoveryConfiguration {
 
     private int dropwizardCheckStaleness;
 
+    private boolean disableLivelinessCheck = true;
+
+    @Valid
+    private LivelinessCheck livelinessCheck;
+
     @Builder
     public ServiceDiscoveryConfiguration(
             String namespace,
@@ -85,7 +96,9 @@ public class ServiceDiscoveryConfiguration {
             long initialDelaySeconds,
             boolean initialRotationStatus,
             int dropwizardCheckInterval,
-            int dropwizardCheckStaleness) {
+            int dropwizardCheckStaleness,
+            boolean disableLivelinessCheck,
+            LivelinessCheck livelinessCheck) {
         this.namespace = Strings.isNullOrEmpty(namespace)
                          ? Constants.DEFAULT_NAMESPACE
                          : namespace;
@@ -108,5 +121,10 @@ public class ServiceDiscoveryConfiguration {
                                        ? Constants.DEFAULT_DW_CHECK_INTERVAL
                                        : dropwizardCheckInterval;
         this.dropwizardCheckStaleness = dropwizardCheckStaleness;
+        this.disableLivelinessCheck = disableLivelinessCheck;
+        this.livelinessCheck = null != livelinessCheck
+                                        ? livelinessCheck
+                                        : LivelinessCheck.builder().build();
     }
+
 }

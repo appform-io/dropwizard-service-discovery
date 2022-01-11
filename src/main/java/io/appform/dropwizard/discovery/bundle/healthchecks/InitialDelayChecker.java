@@ -28,7 +28,6 @@ import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 public class InitialDelayChecker implements Healthcheck {
     private final long validRegistrationTime;
 
-
     public InitialDelayChecker(long initialDelaySeconds) {
         validRegistrationTime = System.currentTimeMillis() + initialDelaySeconds * 1000;
     }

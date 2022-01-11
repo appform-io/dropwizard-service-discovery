@@ -29,4 +29,8 @@ public class Constants {
     public static final int DEFAULT_PORT = -1;
     public static final int DEFAULT_DW_CHECK_INTERVAL = 15;
     public static final int DEFAULT_RETRY_CONN_INTERVAL = 5000;
+    public static final double DEFAULT_LIVELINESS_THRESHOLD = 1D;
+    public static final int DEFAULT_INITIAL_DELAY = 5;
+    public static final int DEFAULT_DW_STALENESS_SECONDS = 30;
+    public static final String THREAD_UTIL_GAUGE = "org.eclipse.jetty.util.thread.QueuedThreadPool.dw.utilization-max";
 }
