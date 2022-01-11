@@ -78,8 +78,6 @@ public class ServiceDiscoveryConfiguration {
 
     private int dropwizardCheckStaleness;
 
-    private boolean disableLivelinessCheck = true;
-
     @Valid
     private LivelinessCheck livelinessCheck;
 
@@ -97,7 +95,6 @@ public class ServiceDiscoveryConfiguration {
             boolean initialRotationStatus,
             int dropwizardCheckInterval,
             int dropwizardCheckStaleness,
-            boolean disableLivelinessCheck,
             LivelinessCheck livelinessCheck) {
         this.namespace = Strings.isNullOrEmpty(namespace)
                          ? Constants.DEFAULT_NAMESPACE
@@ -121,7 +118,6 @@ public class ServiceDiscoveryConfiguration {
                                        ? Constants.DEFAULT_DW_CHECK_INTERVAL
                                        : dropwizardCheckInterval;
         this.dropwizardCheckStaleness = dropwizardCheckStaleness;
-        this.disableLivelinessCheck = disableLivelinessCheck;
         this.livelinessCheck = null != livelinessCheck
                                         ? livelinessCheck
                                         : LivelinessCheck.builder().build();
