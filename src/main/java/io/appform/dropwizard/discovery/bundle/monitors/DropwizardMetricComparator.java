@@ -21,7 +21,6 @@ import javax.inject.Singleton;
 @Slf4j
 public class DropwizardMetricComparator extends IsolatedHealthMonitor<HealthcheckStatus> {
 
-
     private final String metricName;
     private final MetricRegistry metricRegistry;
     private final double unhealthyThreshold;
