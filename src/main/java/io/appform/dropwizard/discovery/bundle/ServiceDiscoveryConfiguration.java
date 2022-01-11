@@ -118,9 +118,7 @@ public class ServiceDiscoveryConfiguration {
                                        ? Constants.DEFAULT_DW_CHECK_INTERVAL
                                        : dropwizardCheckInterval;
         this.dropwizardCheckStaleness = dropwizardCheckStaleness;
-        this.livelinessCheck = null != livelinessCheck
-                                        ? livelinessCheck
-                                        : LivelinessCheck.builder().build();
+        this.livelinessCheck = livelinessCheck;
     }
 
 }
