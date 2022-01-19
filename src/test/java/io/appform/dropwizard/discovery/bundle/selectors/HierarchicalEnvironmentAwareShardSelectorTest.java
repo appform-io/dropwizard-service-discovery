@@ -40,7 +40,6 @@ import static org.mockito.Mockito.doReturn;
  *
  */
 class HierarchicalEnvironmentAwareShardSelectorTest {
-    private HierarchicalEnvironmentAwareShardSelector hierarchicalEnvironmentAwareShardSelector;
 
     @Mock
     private MapBasedServiceRegistry<ShardInfo> serviceRegistry;
@@ -48,7 +47,6 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        this.hierarchicalEnvironmentAwareShardSelector = new HierarchicalEnvironmentAwareShardSelector();
     }
 
     @Test
@@ -77,9 +75,7 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
 
         doReturn(serviceNodes).when(serviceRegistry).nodes();
 
-        val nodes = hierarchicalEnvironmentAwareShardSelector.nodes(
-                new HierarchicalSelectionPredicate(ShardInfo.builder().environment("z").build()),
-                serviceRegistry);
+        val nodes = selector("z").nodes(null, serviceRegistry);
         assertEquals(0, nodes.size());
     }
 
@@ -107,12 +103,15 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
                                   System.currentTimeMillis()));
         doReturn(serviceNodes).when(serviceRegistry).nodes();
 
-        val nodes = hierarchicalEnvironmentAwareShardSelector.nodes(
-                new HierarchicalSelectionPredicate(ShardInfo.builder().environment("x.y").build()),
-                serviceRegistry);
+        val nodes = selector("x.y")
+                .nodes(null, serviceRegistry);
         assertEquals(1, nodes.size());
         assertEquals("host1", nodes.get(0).getHost());
         assertEquals(8888, nodes.get(0).getPort());
+    }
+
+    private HierarchicalEnvironmentAwareShardSelector selector(String environment) {
+        return new HierarchicalEnvironmentAwareShardSelector(environment);
     }
 
     @Test
@@ -139,41 +138,9 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
                                   System.currentTimeMillis()));
         doReturn(serviceNodes).when(serviceRegistry).nodes();
 
-        val nodes = hierarchicalEnvironmentAwareShardSelector.nodes(
-                new HierarchicalSelectionPredicate(ShardInfo.builder().environment("x.y").build()),
-                serviceRegistry);
+        val nodes = selector("x.y").nodes(null, serviceRegistry);
         assertEquals(1, nodes.size());
         assertEquals("host2", nodes.get(0).getHost());
         assertEquals(9999, nodes.get(0).getPort());
-    }
-
-    @Test
-    void testAllNodes() {
-        val serviceName = UUID.randomUUID().toString();
-        val service = Mockito.mock(Service.class);
-        doReturn(serviceName).when(service).getServiceName();
-        doReturn(service).when(serviceRegistry).getService();
-
-        ListMultimap<ShardInfo, ServiceNode<ShardInfo>> serviceNodes = ArrayListMultimap.create();
-        serviceNodes.put(
-                ShardInfo.builder().environment("x.y.z").build(),
-                new ServiceNode<>("host1",
-                                  8888,
-                                  ShardInfo.builder().environment("x.y").build(),
-                                  HealthcheckStatus.healthy,
-                                  System.currentTimeMillis()));
-        serviceNodes.put(
-                ShardInfo.builder().environment("x").build(),
-                new ServiceNode<>("host2",
-                                  8888,
-                                  ShardInfo.builder().environment("x").build(),
-                                  HealthcheckStatus.healthy,
-                                  System.currentTimeMillis()));
-        doReturn(serviceNodes).when(serviceRegistry).nodes();
-
-        val nodes = hierarchicalEnvironmentAwareShardSelector.nodes(
-                new HierarchicalSelectionPredicate(ShardInfo.builder().environment("*").build()),
-                serviceRegistry);
-        assertEquals(2, nodes.size());
     }
 }

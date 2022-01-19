@@ -22,12 +22,7 @@ import ch.qos.logback.classic.Logger;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.appform.dropwizard.discovery.bundle.selectors.HierarchicalEnvironmentAwareShardSelector;
-import io.appform.dropwizard.discovery.bundle.selectors.HierarchicalSelectionPredicate;
-import io.appform.ranger.common.server.ShardInfo;
-import io.appform.ranger.core.finder.serviceregistry.MapBasedServiceRegistry;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
-import io.appform.ranger.core.model.ShardSelector;
 import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
@@ -45,8 +40,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
-
-import java.util.function.Predicate;
 
 import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodeAbsence;
 import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodePresence;
@@ -81,12 +74,6 @@ class ServiceDiscoveryBundleHierarchicalSelectorTest {
 
     private final ServiceDiscoveryBundle<TestConfig> bundle = new ServiceDiscoveryBundle<TestConfig>() {
         @Override
-        protected ShardSelector<ShardInfo, MapBasedServiceRegistry<ShardInfo>> getShardSelector(
-                TestConfig configuration) {
-            return new HierarchicalEnvironmentAwareShardSelector();
-        }
-
-        @Override
         protected ServiceDiscoveryConfiguration getRangerConfiguration(TestConfig configuration) {
             return serviceDiscoveryConfiguration;
         }
@@ -95,21 +82,6 @@ class ServiceDiscoveryBundleHierarchicalSelectorTest {
         protected String getServiceName(TestConfig configuration) {
             return "TestService";
         }
-
-        @Override
-        protected Predicate<ShardInfo> getInitialCriteria(TestConfig configuration) {
-            return new HierarchicalSelectionPredicate(ShardInfo.builder()
-                                                              .environment(configuration.getConfiguration()
-                                                                                   .getEnvironment())
-                                                              .build());
-        }
-
-        @Override
-        protected boolean alwaysMergeWithInitialCriteria(TestConfig configuration) {
-            return true;
-        }
-
-
     };
 
     private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;

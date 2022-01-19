@@ -35,11 +35,11 @@ import io.appform.dropwizard.discovery.bundle.rotationstatus.BIRTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.DropwizardServerStatus;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.OORTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.RotationStatus;
+import io.appform.dropwizard.discovery.bundle.selectors.HierarchicalEnvironmentAwareShardSelector;
 import io.appform.ranger.client.RangerClient;
 import io.appform.ranger.client.zk.SimpleRangerZKClient;
 import io.appform.ranger.common.server.ShardInfo;
 import io.appform.ranger.core.finder.serviceregistry.MapBasedServiceRegistry;
-import io.appform.ranger.core.finder.shardselector.MatchingShardSelector;
 import io.appform.ranger.core.healthcheck.Healthcheck;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.appform.ranger.core.healthservice.TimeEntity;
@@ -132,8 +132,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 namespace,
                 serviceName,
                 hostname,
-                port
-                                              );
+                port);
         serviceDiscoveryClient = buildDiscoveryClient(
                 environment,
                 namespace,
@@ -153,7 +152,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
     protected ShardSelector<ShardInfo, MapBasedServiceRegistry<ShardInfo>> getShardSelector(T configuration) {
-        return new MatchingShardSelector<>();
+        return new HierarchicalEnvironmentAwareShardSelector(getRangerConfiguration(configuration).getEnvironment());
     }
 
     protected abstract ServiceDiscoveryConfiguration getRangerConfiguration(T configuration);
@@ -172,7 +171,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
     protected List<IsolatedHealthMonitor<HealthcheckStatus>> getHealthMonitors() {
-        return Lists.newArrayList();
+        return Collections.emptyList();
     }
 
     @SuppressWarnings("unused")

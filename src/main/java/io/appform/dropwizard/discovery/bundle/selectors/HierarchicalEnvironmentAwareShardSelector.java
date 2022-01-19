@@ -17,9 +17,7 @@
 
 package io.appform.dropwizard.discovery.bundle.selectors;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ListMultimap;
-import io.appform.dropwizard.discovery.bundle.Constants;
+import com.google.common.base.Strings;
 import io.appform.ranger.common.server.ShardInfo;
 import io.appform.ranger.core.finder.serviceregistry.MapBasedServiceRegistry;
 import io.appform.ranger.core.model.ServiceNode;
@@ -27,10 +25,7 @@ import io.appform.ranger.core.model.ShardSelector;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -39,33 +34,87 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 public class HierarchicalEnvironmentAwareShardSelector implements ShardSelector<ShardInfo, MapBasedServiceRegistry<ShardInfo>> {
+    private static final String DEFAULT_SEPARATOR = ".";
+    private static final Predicate<ShardInfo> DEFAULT_PREDICATE = shardInfo -> true;
 
-    private List<ServiceNode<ShardInfo>> allNodes(ListMultimap<ShardInfo, ServiceNode<ShardInfo>> serviceNodes) {
-        return serviceNodes.asMap()
-                .values()
-                .stream()
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
+    private final String environment;
+    private final String separator;
+
+    public HierarchicalEnvironmentAwareShardSelector(String environment) {
+        this(environment, DEFAULT_SEPARATOR);
+    }
+
+    public HierarchicalEnvironmentAwareShardSelector(String environment, String separator) {
+        this.environment = environment;
+        this.separator = separator;
     }
 
     @Override
     public List<ServiceNode<ShardInfo>> nodes(
             Predicate<ShardInfo> predicate, MapBasedServiceRegistry<ShardInfo> serviceRegistry) {
-        Preconditions.checkArgument(predicate instanceof HierarchicalSelectionPredicate);
-        val requiredInfo = ((HierarchicalSelectionPredicate) predicate).getShardInfo();
         val serviceNodes = serviceRegistry.nodes();
         val serviceName = serviceRegistry.getService().getServiceName();
-        val environment = requiredInfo.getEnvironment();
-
-        if (Objects.equals(environment, Constants.ALL_ENV)) {
-            return allNodes(serviceNodes);
+        val evalPredicate = null != predicate
+                       ? predicate
+                       : DEFAULT_PREDICATE;
+        for (val env : new IterableEnvironment(environment, separator)) {
+            val eligibleNodes = serviceNodes.entries()
+                    .stream()
+                    .filter(e -> e.getKey().getEnvironment().equals(env.environment) && evalPredicate.test(e.getKey()))
+                    .map(Map.Entry::getValue)
+                    .collect(Collectors.toList());
+            if (!eligibleNodes.isEmpty()) {
+                log.info("Effective environment for discovery of {} is {}", serviceName, env.environment);
+                return eligibleNodes;
+            }
+            log.trace("No nodes found for environment: {}", env.environment);
         }
-        for (ShardInfo shardInfo : requiredInfo) {
-            val currentEnvNodes = serviceNodes.get(shardInfo);
-            if (!currentEnvNodes.isEmpty()) {
-                log.debug("Effective environment for discovery of {} is {}", serviceName, environment);
-                return currentEnvNodes;
+        log.warn("No valid nodes could be found for environment: {}", environment);
+        return Collections.emptyList();
+    }
+
+    private static final class IterableEnvironment implements Iterable<IterableEnvironment> {
+        private final String environment;
+        private final String separator;
+
+        private IterableEnvironment(String environment, String separator) {
+            this.environment = environment;
+            this.separator = separator;
+        }
+
+        @Override
+        public Iterator<IterableEnvironment> iterator() {
+            return new EnvironmentIterator(environment, separator);
+        }
+
+        public static final class EnvironmentIterator implements Iterator<IterableEnvironment> {
+
+            private String remainingEnvironment;
+            private final String separator;
+
+            public EnvironmentIterator(String remainingEnvironment, String separator) {
+                this.remainingEnvironment = remainingEnvironment;
+                this.separator = separator;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return !Strings.isNullOrEmpty(remainingEnvironment);
+            }
+
+            @Override
+            public IterableEnvironment next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                log.debug("Effective environment for discovery is {}", remainingEnvironment);
+                val shardInfo = new IterableEnvironment(remainingEnvironment, separator);
+                val sepIndex = remainingEnvironment.indexOf(this.separator);
+                remainingEnvironment = sepIndex < 0
+                                       ? ""
+                                       : remainingEnvironment.substring(0, sepIndex);
+                return shardInfo;
             }
         }
-        return Collections.emptyList();    }
+    }
 }
