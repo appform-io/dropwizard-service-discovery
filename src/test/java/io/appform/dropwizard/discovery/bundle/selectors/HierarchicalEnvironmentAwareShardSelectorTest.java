@@ -25,36 +25,34 @@ import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.appform.ranger.core.model.Service;
 import io.appform.ranger.core.model.ServiceNode;
 import lombok.val;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 
 /**
  *
  */
-public class HierarchicalEnvironmentAwareShardSelectorTest {
-
-
+class HierarchicalEnvironmentAwareShardSelectorTest {
     private HierarchicalEnvironmentAwareShardSelector hierarchicalEnvironmentAwareShardSelector;
 
     @Mock
     private MapBasedServiceRegistry<ShardInfo> serviceRegistry;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         this.hierarchicalEnvironmentAwareShardSelector = new HierarchicalEnvironmentAwareShardSelector();
     }
 
     @Test
-    public void testNoNodeAvailableForTheEnvironment() {
+    void testNoNodeAvailableForTheEnvironment() {
         val serviceName = UUID.randomUUID().toString();
         val service = Mockito.mock(Service.class);
         doReturn(serviceName).when(service).getServiceName();
@@ -86,7 +84,7 @@ public class HierarchicalEnvironmentAwareShardSelectorTest {
     }
 
     @Test
-    public void testNodeAvailableForChildEnv() {
+    void testNodeAvailableForChildEnv() {
         val serviceName = UUID.randomUUID().toString();
         val service = Mockito.mock(Service.class);
         doReturn(serviceName).when(service).getServiceName();
@@ -118,7 +116,7 @@ public class HierarchicalEnvironmentAwareShardSelectorTest {
     }
 
     @Test
-    public void testNoNodeAvailableForChildEnvButAvailableForParentEnv() {
+    void testNoNodeAvailableForChildEnvButAvailableForParentEnv() {
         val serviceName = UUID.randomUUID().toString();
         val service = Mockito.mock(Service.class);
         doReturn(serviceName).when(service).getServiceName();
@@ -150,7 +148,7 @@ public class HierarchicalEnvironmentAwareShardSelectorTest {
     }
 
     @Test
-    public void testAllNodes() {
+    void testAllNodes() {
         val serviceName = UUID.randomUUID().toString();
         val service = Mockito.mock(Service.class);
         doReturn(serviceName).when(service).getServiceName();
@@ -178,5 +176,4 @@ public class HierarchicalEnvironmentAwareShardSelectorTest {
                 serviceRegistry);
         assertEquals(2, nodes.size());
     }
-
 }
