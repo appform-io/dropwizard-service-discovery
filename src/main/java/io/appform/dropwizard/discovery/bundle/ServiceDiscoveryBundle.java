@@ -35,14 +35,17 @@ import io.appform.dropwizard.discovery.bundle.rotationstatus.BIRTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.DropwizardServerStatus;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.OORTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.RotationStatus;
+import io.appform.dropwizard.discovery.bundle.selectors.HierarchicalEnvironmentAwareShardSelector;
 import io.appform.ranger.client.RangerClient;
 import io.appform.ranger.client.zk.SimpleRangerZKClient;
 import io.appform.ranger.common.server.ShardInfo;
+import io.appform.ranger.core.finder.serviceregistry.MapBasedServiceRegistry;
 import io.appform.ranger.core.healthcheck.Healthcheck;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.appform.ranger.core.healthservice.TimeEntity;
 import io.appform.ranger.core.healthservice.monitor.IsolatedHealthMonitor;
 import io.appform.ranger.core.model.ServiceNode;
+import io.appform.ranger.core.model.ShardSelector;
 import io.appform.ranger.core.serviceprovider.ServiceProvider;
 import io.appform.ranger.zookeeper.ServiceProviderBuilders;
 import io.appform.ranger.zookeeper.serde.ZkNodeDataSerializer;
@@ -81,7 +84,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     @Getter
     private CuratorFramework curator;
     @Getter
-    private RangerClient<ShardInfo> serviceDiscoveryClient;
+    private RangerClient<ShardInfo, MapBasedServiceRegistry<ShardInfo>> serviceDiscoveryClient;
     @Getter
     @VisibleForTesting
     private RotationStatus rotationStatus;
@@ -114,6 +117,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
         val port = getPort(configuration);
         val initialCriteria = getInitialCriteria(configuration);
         val useInitialCriteria = alwaysMergeWithInitialCriteria(configuration);
+        val shardSelector = getShardSelector(configuration);
         rotationStatus = new RotationStatus(serviceDiscoveryConfiguration.isInitialRotationStatus());
         serverStatus = new DropwizardServerStatus(false);
 
@@ -128,14 +132,14 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 namespace,
                 serviceName,
                 hostname,
-                port
-                                              );
+                port);
         serviceDiscoveryClient = buildDiscoveryClient(
                 environment,
                 namespace,
                 serviceName,
                 initialCriteria,
-                useInitialCriteria);
+                useInitialCriteria,
+                shardSelector);
 
         environment.lifecycle()
                 .manage(new ServiceDiscoveryManager(serviceName));
@@ -145,6 +149,10 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .addTask(new OORTask(rotationStatus));
         environment.admin()
                 .addTask(new BIRTask(rotationStatus));
+    }
+
+    protected ShardSelector<ShardInfo, MapBasedServiceRegistry<ShardInfo>> getShardSelector(T configuration) {
+        return new HierarchicalEnvironmentAwareShardSelector(getRangerConfiguration(configuration).getEnvironment());
     }
 
     protected abstract ServiceDiscoveryConfiguration getRangerConfiguration(T configuration);
@@ -163,7 +171,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
     protected List<IsolatedHealthMonitor<HealthcheckStatus>> getHealthMonitors() {
-        return Lists.newArrayList();
+        return Collections.emptyList();
     }
 
     @SuppressWarnings("unused")
@@ -194,12 +202,13 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
 
-    private RangerClient<ShardInfo> buildDiscoveryClient(
+    private RangerClient<ShardInfo, MapBasedServiceRegistry<ShardInfo>> buildDiscoveryClient(
             Environment environment,
             String namespace,
             String serviceName,
             Predicate<ShardInfo> initialCriteria,
-            boolean mergeWithInitialCriteria) {
+            boolean mergeWithInitialCriteria,
+            ShardSelector<ShardInfo, MapBasedServiceRegistry<ShardInfo>> shardSelector) {
         return SimpleRangerZKClient.<ShardInfo>builder()
                 .curatorFramework(curator)
                 .namespace(namespace)
@@ -218,10 +227,9 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                             return null;
                         }
                 )
-                .initialCriteria(
-                        initialCriteria
-                )
+                .initialCriteria(initialCriteria)
                 .alwaysUseInitialCriteria(mergeWithInitialCriteria)
+                .shardSelector(shardSelector)
                 .build();
     }
 
