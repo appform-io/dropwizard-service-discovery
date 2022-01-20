@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [2.0.28-2.RC3]
+## [2.0.28-2.RC4]
 - Collapsed the multiple modules into one, since the client is now contained in the ranger version 1.0-RC2 and above. 
 - Made the necessary packaging changes to work with the new ranger (io.appform)
 - Minor sonar and lombok fixes
