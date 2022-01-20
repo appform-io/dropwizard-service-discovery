@@ -19,6 +19,7 @@ package io.appform.dropwizard.discovery.bundle;
 
 import io.appform.ranger.client.RangerClient;
 import io.appform.ranger.common.server.ShardInfo;
+import io.appform.ranger.core.finder.serviceregistry.MapBasedServiceRegistry;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -32,9 +33,9 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/instances")
 public class InfoResource {
-    private final RangerClient<ShardInfo> serviceDiscoveryClient;
+    private final RangerClient<ShardInfo, MapBasedServiceRegistry<ShardInfo>> serviceDiscoveryClient;
 
-    public InfoResource(RangerClient<ShardInfo> serviceDiscoveryClient) {
+    public InfoResource(RangerClient<ShardInfo, MapBasedServiceRegistry<ShardInfo>> serviceDiscoveryClient) {
         this.serviceDiscoveryClient = serviceDiscoveryClient;
     }
 

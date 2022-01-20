@@ -84,7 +84,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     @Getter
     private CuratorFramework curator;
     @Getter
-    private RangerClient<ShardInfo> serviceDiscoveryClient;
+    private RangerClient<ShardInfo, MapBasedServiceRegistry<ShardInfo>> serviceDiscoveryClient;
     @Getter
     @VisibleForTesting
     private RotationStatus rotationStatus;
@@ -202,7 +202,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
 
-    private RangerClient<ShardInfo> buildDiscoveryClient(
+    private RangerClient<ShardInfo, MapBasedServiceRegistry<ShardInfo>> buildDiscoveryClient(
             Environment environment,
             String namespace,
             String serviceName,

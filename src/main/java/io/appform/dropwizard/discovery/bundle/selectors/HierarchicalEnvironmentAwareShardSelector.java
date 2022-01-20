@@ -51,12 +51,12 @@ public class HierarchicalEnvironmentAwareShardSelector implements ShardSelector<
 
     @Override
     public List<ServiceNode<ShardInfo>> nodes(
-            Predicate<ShardInfo> predicate, MapBasedServiceRegistry<ShardInfo> serviceRegistry) {
+            Predicate<ShardInfo> criteria, MapBasedServiceRegistry<ShardInfo> serviceRegistry) {
         val serviceNodes = serviceRegistry.nodes();
         val serviceName = serviceRegistry.getService().getServiceName();
-        val evalPredicate = null != predicate
-                       ? predicate
-                       : DEFAULT_PREDICATE;
+        val evalPredicate = null != criteria
+                            ? criteria
+                            : DEFAULT_PREDICATE;
         for (val env : new IterableEnvironment(environment, separator)) {
             val eligibleNodes = serviceNodes.entries()
                     .stream()

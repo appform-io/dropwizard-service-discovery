@@ -18,7 +18,6 @@
 package io.appform.dropwizard.discovery.bundle.selectors;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ListMultimap;
 import io.appform.ranger.common.server.ShardInfo;
 import io.appform.ranger.core.finder.serviceregistry.MapBasedServiceRegistry;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
@@ -56,7 +55,7 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
         doReturn(serviceName).when(service).getServiceName();
         doReturn(service).when(serviceRegistry).getService();
 
-        ListMultimap<ShardInfo, ServiceNode<ShardInfo>> serviceNodes = ArrayListMultimap.create();
+        val serviceNodes = ArrayListMultimap.create();
         serviceNodes.put(
                 ShardInfo.builder().environment("x.y").build(),
                 new ServiceNode<>("host1",
@@ -86,7 +85,7 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
         doReturn(serviceName).when(service).getServiceName();
         doReturn(service).when(serviceRegistry).getService();
 
-        ListMultimap<ShardInfo, ServiceNode<ShardInfo>> serviceNodes = ArrayListMultimap.create();
+        val serviceNodes = ArrayListMultimap.create();
         serviceNodes.put(
                 ShardInfo.builder().environment("x.y").build(),
                 new ServiceNode<>("host1",
@@ -121,7 +120,7 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
         doReturn(serviceName).when(service).getServiceName();
         doReturn(service).when(serviceRegistry).getService();
 
-        ListMultimap<ShardInfo, ServiceNode<ShardInfo>> serviceNodes = ArrayListMultimap.create();
+        val serviceNodes = ArrayListMultimap.create();
         serviceNodes.put(
                 ShardInfo.builder().environment("x.y.z").build(),
                 new ServiceNode<>("host1",
