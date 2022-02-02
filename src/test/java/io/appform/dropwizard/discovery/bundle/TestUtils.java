@@ -31,7 +31,7 @@ import static org.junit.Assert.assertNull;
  */
 @UtilityClass
 public class TestUtils {
-    public static void assertNodePresence(ServiceDiscoveryBundle<Configuration> bundle) {
+    public static<T extends Configuration> void assertNodePresence(ServiceDiscoveryBundle<T> bundle) {
         Awaitility.await()
                 .pollInterval(Duration.ofSeconds(1))
                 .atMost(Duration.ofSeconds(30))
@@ -39,7 +39,7 @@ public class TestUtils {
                                                            .getNode()
                                                            .orElse(null)));
     }
-    public static void assertNodeAbsence(ServiceDiscoveryBundle<Configuration> bundle) {
+    public static<T extends Configuration>  void assertNodeAbsence(ServiceDiscoveryBundle<T> bundle) {
         Awaitility.await()
                 .pollInterval(Duration.ofSeconds(1))
                 .atMost(Duration.ofSeconds(30))
