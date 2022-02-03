@@ -1,4 +1,4 @@
-# Dropwizard Service Discovery [![Travis build status](https://travis-ci.org/santanusinha/dropwizard-service-discovery.svg?branch=master)](https://travis-ci.org/santanusinha/dropwizard-service-discovery)
+# Dropwizard Service Discovery [![Build](https://github.com/appform-io/dropwizard-service-discovery/actions/workflows/build.yml/badge.svg)](https://github.com/appform-io/dropwizard-service-discovery/actions/workflows/build.yml)
 
 Provides service discovery to dropwizard services. It uses [Ranger](https://github.com/flipkart-incubator/ranger) for service discovery.
 
