@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [2.0.28-2.RC5]
-- Added region and tags to nodeData.
+- Added region and tags to nodeData, to be able to run Predicate atop it with a finder.
 - Upgraded ranger version to 1.0-RC7
 - 
 ## [2.0.28-2.RC4]
