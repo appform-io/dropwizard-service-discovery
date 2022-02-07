@@ -242,6 +242,8 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
             int port) {
         val nodeInfo = ShardInfo.builder()
                 .environment(serviceDiscoveryConfiguration.getEnvironment())
+                .region(serviceDiscoveryConfiguration.getRegion())
+                .tags(serviceDiscoveryConfiguration.getTags())
                 .build();
         val initialDelayForMonitor = serviceDiscoveryConfiguration.getInitialDelaySeconds() > 1
                                      ? serviceDiscoveryConfiguration.getInitialDelaySeconds() - 1

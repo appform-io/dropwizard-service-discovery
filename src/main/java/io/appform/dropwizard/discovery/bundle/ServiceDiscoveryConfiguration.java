@@ -24,6 +24,7 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.util.Set;
 
 /**
  * Ranger configuration.
@@ -72,6 +73,10 @@ public class ServiceDiscoveryConfiguration {
 
     private int dropwizardCheckStaleness;
 
+    private String region;
+
+    private Set<String> tags;
+
     @Builder
     public ServiceDiscoveryConfiguration(
             String namespace,
@@ -85,7 +90,9 @@ public class ServiceDiscoveryConfiguration {
             long initialDelaySeconds,
             boolean initialRotationStatus,
             int dropwizardCheckInterval,
-            int dropwizardCheckStaleness) {
+            int dropwizardCheckStaleness,
+            String region,
+            Set<String> tags) {
         this.namespace = Strings.isNullOrEmpty(namespace)
                          ? Constants.DEFAULT_NAMESPACE
                          : namespace;
@@ -108,5 +115,7 @@ public class ServiceDiscoveryConfiguration {
                                        ? Constants.DEFAULT_DW_CHECK_INTERVAL
                                        : dropwizardCheckInterval;
         this.dropwizardCheckStaleness = dropwizardCheckStaleness;
+        this.region = region;
+        this.tags = tags;
     }
 }
