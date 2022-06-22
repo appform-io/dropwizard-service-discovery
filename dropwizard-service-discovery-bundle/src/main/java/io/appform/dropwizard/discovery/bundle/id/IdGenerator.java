@@ -73,7 +73,7 @@ public class IdGenerator {
     private static List<IdValidationConstraint> globalConstraints = Collections.emptyList();
     private static Map<String, List<IdValidationConstraint>> domainSpecificConstraints = new HashMap<>();
     private static final Retryer<GenerationResult> retrier = RetryerBuilder.<GenerationResult>newBuilder()
-            .withStopStrategy(StopStrategies.stopAfterAttempt(512))
+            .withStopStrategy(StopStrategies.stopAfterAttempt(2048))
             .retryIfException()
             .retryIfResult(Objects::isNull)
             .retryIfResult(result -> result.getState().equals(IdValidationState.INVALID_RETRYABLE))
