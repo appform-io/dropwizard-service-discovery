@@ -20,6 +20,8 @@ package io.appform.dropwizard.discovery.bundle.id;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.BitSet;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Checks collisions between ids in given period
@@ -29,27 +31,41 @@ public class CollisionChecker {
     private final BitSet bitSet = new BitSet(1000);
     private long currentInstant = 0;
 
+    private final Lock dataLock = new ReentrantLock();
+
     public CollisionChecker() {
         //Nothing to do here
     }
 
     public boolean check(long time, int location) {
-        if(currentInstant != time) {
-            currentInstant = time;
-            bitSet.clear();
-        }
+        dataLock.lock();
+        try {
+            if (currentInstant != time) {
+                currentInstant = time;
+                bitSet.clear();
+            }
 
-        if(bitSet.get(location)) {
-            return false;
+            if (bitSet.get(location)) {
+                return false;
+            }
+            bitSet.set(location);
+            return true;
         }
-        bitSet.set(location);
-        return true;
+        finally {
+            dataLock.unlock();
+        }
     }
 
     public void free(long time, int location) {
-        if(currentInstant != time) {
-            return;
+        dataLock.lock();
+        try {
+            if (currentInstant != time) {
+                return;
+            }
+            bitSet.clear(location);
         }
-        bitSet.clear(location);
+        finally {
+            dataLock.unlock();
+        }
     }
 }
