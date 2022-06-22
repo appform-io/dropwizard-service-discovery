@@ -17,27 +17,19 @@
 
 package io.appform.dropwizard.discovery.bundle.id;
 
-import com.github.rholder.retry.RetryException;
-import com.github.rholder.retry.Retryer;
-import com.github.rholder.retry.RetryerBuilder;
-import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.*;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstraint;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,10 +65,22 @@ public class IdGenerator {
     private static List<IdValidationConstraint> globalConstraints = Collections.emptyList();
     private static Map<String, List<IdValidationConstraint>> domainSpecificConstraints = new HashMap<>();
     private static final Retryer<GenerationResult> retrier = RetryerBuilder.<GenerationResult>newBuilder()
-            .withStopStrategy(StopStrategies.stopAfterAttempt(2048))
+            .withStopStrategy(StopStrategies.stopAfterAttempt(512))
             .retryIfException()
             .retryIfResult(Objects::isNull)
             .retryIfResult(result -> result.getState().equals(IdValidationState.INVALID_RETRYABLE))
+            .withRetryListener(new RetryListener() {
+                @Override
+                public <V> void onRetry(Attempt<V> attempt) {
+                    if(attempt.hasResult()) {
+                        val result = (GenerationResult)attempt.getResult();
+                        if(!result.getState().equals(IdValidationState.VALID)) {
+                            val id = result.getId();
+                            collisionChecker.free(id.getGeneratedDate().getTime(), id.getExponent());
+                        }
+                    }
+                }
+            })
             .build();
     private static final String patternString = "(.*)([0-9]{15})([0-9]{4})([0-9]{3})";
     private static Pattern pattern = Pattern.compile(patternString);

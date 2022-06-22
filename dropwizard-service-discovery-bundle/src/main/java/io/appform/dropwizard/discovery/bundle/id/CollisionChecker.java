@@ -26,7 +26,7 @@ import java.util.BitSet;
  */
 @Slf4j
 public class CollisionChecker {
-    private BitSet bitSet = new BitSet(1000);
+    private final BitSet bitSet = new BitSet(1000);
     private long currentInstant = 0;
 
     public CollisionChecker() {
@@ -44,5 +44,12 @@ public class CollisionChecker {
         }
         bitSet.set(location);
         return true;
+    }
+
+    public void free(long time, int location) {
+        if(currentInstant != time) {
+            return;
+        }
+        bitSet.clear(location);
     }
 }
