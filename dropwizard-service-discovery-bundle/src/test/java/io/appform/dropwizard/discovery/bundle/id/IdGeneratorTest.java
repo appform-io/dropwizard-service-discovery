@@ -52,7 +52,7 @@ public class IdGeneratorTest {
             while (!stop) {
                 Id id = IdGenerator.generate("X");
                 count++;
-            };
+            } ;
             return count;
         }
     }
@@ -73,7 +73,7 @@ public class IdGeneratorTest {
                 Optional<Id> id = IdGenerator.generateWithConstraints("X", Collections.singletonList(constraint));
                 Assert.assertTrue(id.isPresent());
                 count++;
-            };
+            } ;
             return count;
         }
     }
@@ -90,7 +90,7 @@ public class IdGeneratorTest {
 
         List<Runner> runners = listBuilder.build();
         ExecutorService executorService = Executors.newFixedThreadPool(numRunners);
-        for(Runner runner : runners) {
+        for (Runner runner : runners) {
             executorService.submit(runner);
         }
         Awaitility.await()
@@ -102,7 +102,7 @@ public class IdGeneratorTest {
         long totalCount = runners.stream().mapToLong(Runner::getCount).sum();
 
         log.debug("Generated ID count: {}", totalCount);
-        log.debug("Generated ID rate: {}/sec", totalCount/10);
+        log.debug("Generated ID rate: {}/sec", totalCount / 10);
         Assert.assertTrue(totalCount > 0);
 
     }
@@ -120,7 +120,7 @@ public class IdGeneratorTest {
 
         List<ConstraintRunner> runners = listBuilder.build();
         ExecutorService executorService = Executors.newFixedThreadPool(numRunners);
-        for(ConstraintRunner runner : runners) {
+        for (ConstraintRunner runner : runners) {
             executorService.submit(runner);
         }
         Awaitility.await()
@@ -132,7 +132,7 @@ public class IdGeneratorTest {
         long totalCount = runners.stream().mapToLong(ConstraintRunner::getCount).sum();
 
         log.debug("Generated ID count: {}", totalCount);
-        log.debug("Generated ID rate: {}/sec", totalCount/10);
+        log.debug("Generated ID rate: {}/sec", totalCount / 10);
         Assert.assertTrue(totalCount > 0);
 
     }
@@ -172,7 +172,7 @@ public class IdGeneratorTest {
     }
 
     @Test
-    public void testParseSuccess(){
+    public void testParseSuccess() {
         String idString = "ABC2011250959030643972247";
         Optional<Id> idOptional = IdGenerator.parse(idString);
         Assert.assertTrue(idOptional.isPresent());
@@ -182,11 +182,11 @@ public class IdGeneratorTest {
         Assert.assertEquals(247, id.getExponent());
         Assert.assertEquals(3972, id.getNode());
         Assert.assertEquals(generateDate(2020, 11, 25, 9, 59, 3, 64, ZoneId.systemDefault()),
-                id.getGeneratedDate());
+                            id.getGeneratedDate());
     }
 
     @Test
-    public void testParseSuccessAfterGeneration(){
+    public void testParseSuccessAfterGeneration() {
         Id generatedId = IdGenerator.generate("TEST123");
         Optional<Id> parsedIdOptional = IdGenerator.parse(generatedId.getId());
         Assert.assertTrue(parsedIdOptional.isPresent());
@@ -205,11 +205,11 @@ public class IdGeneratorTest {
                         ZonedDateTime.of(
                                 LocalDateTime.of(
                                         year, month, day, hour, min, sec, Math.multiplyExact(ms, 1000000)
-                                ),
+                                                ),
                                 zoneId
-                        )
-                )
-        );
+                                        )
+                            )
+                        );
     }
 
 
