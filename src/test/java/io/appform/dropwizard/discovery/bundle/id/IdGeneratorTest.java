@@ -103,6 +103,7 @@ class IdGeneratorTest {
     void testGenerateWithConstraintsNoConstraint() {
         IdGenerator.initialize(23);
         int numRunners = 20;
+
         val runners = IntStream.range(0, numRunners).mapToObj(i -> new ConstraintRunner(new PartitionValidator(4, new JavaHashCodeBasedKeyPartitioner(16)))).collect(Collectors.toList());
         val executorService = Executors.newFixedThreadPool(numRunners);
         runners.forEach(executorService::submit);
@@ -183,11 +184,11 @@ class IdGeneratorTest {
                         ZonedDateTime.of(
                                 LocalDateTime.of(
                                         year, month, day, hour, min, sec, Math.multiplyExact(ms, 1000000)
-                                ),
+                                                ),
                                 zoneId
-                        )
-                )
-        );
+                                        )
+                            )
+                        );
     }
 
 

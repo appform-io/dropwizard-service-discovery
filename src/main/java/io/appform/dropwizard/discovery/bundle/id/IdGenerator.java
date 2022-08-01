@@ -46,36 +46,46 @@ public class IdGenerator {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom(Long.toBinaryString(System.currentTimeMillis()).getBytes());
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormat.forPattern("yyMMddHHmmssSSS");
     private static final CollisionChecker COLLISION_CHECKER = new CollisionChecker();
-    private static final Map<String, List<IdValidationConstraint>> DOMAIN_SPECIFIC_CONSTRAINTS = new HashMap<>();
     private static final RetryPolicy<GenerationResult> RETRY_POLICY = RetryPolicy.<GenerationResult>builder()
-            .withMaxAttempts(512)
+            .withMaxAttempts(readRetryCount())
             .handleIf((Predicate<Throwable>) throwable -> true)
             .handleResultIf(Objects::isNull)
             .handleResultIf(generationResult -> generationResult.getState() == IdValidationState.INVALID_RETRYABLE)
+            .onRetry(event -> {
+                val res = event.getLastResult();
+                if(null != res && !res.getState().equals(IdValidationState.VALID)) {
+                    val id = res.getId();
+                    COLLISION_CHECKER.free(id.getGeneratedDate().getTime(), id.getExponent());
+                }
+            })
             .build();
-    private static final FailsafeExecutor<GenerationResult> RETRIER = Failsafe.with(
-            Collections.singletonList(RETRY_POLICY));
-    private static final String PATTERN_STRING = "(.*)([0-9]{15})([0-9]{4})([0-9]{3})";
-    private static final Pattern PATTERN = Pattern.compile(PATTERN_STRING);
+    private static final FailsafeExecutor<GenerationResult> RETRIER
+            = Failsafe.with(Collections.singletonList(RETRY_POLICY));
+    private static final Pattern PATTERN = Pattern.compile("(.*)([0-9]{15})([0-9]{4})([0-9]{3})");
+
+    private static final List<IdValidationConstraint> GLOBAL_CONSTRAINTS = new ArrayList<>();
+    private static final Map<String, List<IdValidationConstraint>> DOMAIN_SPECIFIC_CONSTRAINTS = new HashMap<>();
     private static int nodeId;
-    private static List<IdValidationConstraint> globalConstraints = Collections.emptyList();
 
     public static void initialize(int node) {
         nodeId = node;
     }
 
     public static synchronized void cleanUp() {
-        globalConstraints.clear();
+        GLOBAL_CONSTRAINTS.clear();
         DOMAIN_SPECIFIC_CONSTRAINTS.clear();
     }
+
 
     public static synchronized void initialize(
             int node, List<IdValidationConstraint> globalConstraints, Map<String, List<IdValidationConstraint>> domainSpecificConstraints) {
         nodeId = node;
-        IdGenerator.globalConstraints = globalConstraints != null
-                ? globalConstraints
-                : Collections.emptyList();
-        IdGenerator.DOMAIN_SPECIFIC_CONSTRAINTS.putAll(domainSpecificConstraints);
+        if(null != globalConstraints) {
+            IdGenerator.GLOBAL_CONSTRAINTS.addAll(globalConstraints);
+        }
+        if(null != domainSpecificConstraints) {
+            IdGenerator.DOMAIN_SPECIFIC_CONSTRAINTS.putAll(domainSpecificConstraints);
+        }
     }
 
     public static synchronized void registerGlobalConstraints(IdValidationConstraint... constraints) {
@@ -84,17 +94,18 @@ public class IdGenerator {
 
     public static synchronized void registerGlobalConstraints(List<IdValidationConstraint> constraints) {
         Preconditions.checkArgument(null != constraints && !constraints.isEmpty());
-        if (null == globalConstraints) {
-            globalConstraints = new ArrayList<>();
-        }
-        globalConstraints.addAll(constraints);
+        GLOBAL_CONSTRAINTS.addAll(constraints);
     }
 
-    public static synchronized void registerDomainSpecificConstraints(String domain, IdValidationConstraint... validationConstraints) {
+    public static synchronized void registerDomainSpecificConstraints(
+            String domain,
+            IdValidationConstraint... validationConstraints) {
         registerDomainSpecificConstraints(domain, ImmutableList.copyOf(validationConstraints));
     }
 
-    public static synchronized void registerDomainSpecificConstraints(String domain, List<IdValidationConstraint> validationConstraints) {
+    public static synchronized void registerDomainSpecificConstraints(
+            String domain,
+            List<IdValidationConstraint> validationConstraints) {
         Preconditions.checkArgument(null != validationConstraints && !validationConstraints.isEmpty());
         DOMAIN_SPECIFIC_CONSTRAINTS.computeIfAbsent(domain, key -> new ArrayList<>())
                 .addAll(validationConstraints);
@@ -154,7 +165,9 @@ public class IdGenerator {
      * @param inConstraints Constraints that need to be validated.
      * @return Id if it could be generated
      */
-    public static Optional<Id> generateWithConstraints(String prefix, final List<IdValidationConstraint> inConstraints) {
+    public static Optional<Id> generateWithConstraints(
+            String prefix,
+            final List<IdValidationConstraint> inConstraints) {
         return generateWithConstraints(prefix, inConstraints, false);
     }
 
@@ -180,7 +193,8 @@ public class IdGenerator {
                         .build());
             }
             return Optional.empty();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             log.warn("Could not parse idString {}", e.getMessage());
             return Optional.empty();
         }
@@ -196,7 +210,10 @@ public class IdGenerator {
      * @param skipGlobal    Skip global constrains and use only passed ones
      * @return Id if it could be generated
      */
-    public static Optional<Id> generateWithConstraints(String prefix, final List<IdValidationConstraint> inConstraints, boolean skipGlobal) {
+    public static Optional<Id> generateWithConstraints(
+            String prefix,
+            final List<IdValidationConstraint> inConstraints,
+            boolean skipGlobal) {
         return Optional.ofNullable(RETRIER.get(
                         () -> {
                             Id id = generate(prefix);
@@ -206,7 +223,7 @@ public class IdGenerator {
                 .map(GenerationResult::getId);
     }
 
-    private static synchronized IdInfo random() {
+    private static IdInfo random() {
         int randomGen;
         long time;
         do {
@@ -219,31 +236,46 @@ public class IdGenerator {
     private static IdValidationState validateId(List<IdValidationConstraint> inConstraints, Id id, boolean skipGlobal) {
         //First evaluate global constraints
         val failedGlobalConstraint
-                = skipGlobal || null == globalConstraints
-                ? null
-                : globalConstraints.stream()
-                .filter(constraint -> !constraint.isValid(id))
-                .findFirst()
-                .orElse(null);
+                = skipGlobal
+                  ? null
+                  : GLOBAL_CONSTRAINTS.stream()
+                          .filter(constraint -> !constraint.isValid(id))
+                          .findFirst()
+                          .orElse(null);
         if (null != failedGlobalConstraint) {
             return failedGlobalConstraint.failFast()
-                    ? IdValidationState.INVALID_NON_RETRYABLE
-                    : IdValidationState.INVALID_RETRYABLE;
+                   ? IdValidationState.INVALID_NON_RETRYABLE
+                   : IdValidationState.INVALID_RETRYABLE;
         }
         //Evaluate local + domain constraints
         val failedLocalConstraint
                 = null == inConstraints
-                ? null
-                : inConstraints.stream()
-                .filter(constraint -> !constraint.isValid(id))
-                .findFirst()
-                .orElse(null);
+                  ? null
+                  : inConstraints.stream()
+                          .filter(constraint -> !constraint.isValid(id))
+                          .findFirst()
+                          .orElse(null);
         if (null != failedLocalConstraint) {
             return failedLocalConstraint.failFast()
-                    ? IdValidationState.INVALID_NON_RETRYABLE
-                    : IdValidationState.INVALID_RETRYABLE;
+                   ? IdValidationState.INVALID_NON_RETRYABLE
+                   : IdValidationState.INVALID_RETRYABLE;
         }
         return IdValidationState.VALID;
+    }
+
+    private static int readRetryCount() {
+        try {
+            val count = Integer.parseInt(System.getenv().getOrDefault("NUM_ID_GENERATION_RETRIES", "512"));
+            if (count <= 0) {
+                throw new IllegalArgumentException(
+                        "Negative number of retries does not make sense. Please set a proper value for " +
+                                "NUM_ID_GENERATION_RETRIES");
+            }
+            return count;
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Please provide a valid positive integer for NUM_ID_GENERATION_RETRIES");
+        }
     }
 
     private enum IdValidationState {
