@@ -169,4 +169,4 @@ client.stop();
 Apache 2
 
 # NOTE
-Package and group id has changed from `io.dropwizard.discovery` to `io.appfrom.dropwizard.discovery` from 1.3.12-2.
+Package and group id has changed from `io.dropwizard.discovery` to `io.appform.dropwizard.discovery` from 1.3.12-2.
