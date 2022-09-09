@@ -48,7 +48,7 @@ public class IdGenerator {
     private static final CollisionChecker COLLISION_CHECKER = new CollisionChecker();
     private static final RetryPolicy<GenerationResult> RETRY_POLICY = RetryPolicy.<GenerationResult>builder()
             .withMaxAttempts(readRetryCount())
-            .handleIf((Predicate<Throwable>) throwable -> true)
+            .handleIf(throwable -> true)
             .handleResultIf(Objects::isNull)
             .handleResultIf(generationResult -> generationResult.getState() == IdValidationState.INVALID_RETRYABLE)
             .onRetry(event -> {
