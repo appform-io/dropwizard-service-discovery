@@ -17,6 +17,8 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
+import java.util.Arrays;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -29,4 +31,6 @@ public class Constants {
     public static final int DEFAULT_PORT = -1;
     public static final int DEFAULT_DW_CHECK_INTERVAL = 15;
     public static final int DEFAULT_RETRY_CONN_INTERVAL = 5000;
+
+    public static final List<String> LOCALHOSTS  = Arrays.asList("127.0.0.1", "localhost");
 }
