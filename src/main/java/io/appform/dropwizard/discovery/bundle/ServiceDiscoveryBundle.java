@@ -17,7 +17,7 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
-import static io.appform.dropwizard.discovery.bundle.Constants.LOCALHOSTS;
+import static io.appform.dropwizard.discovery.bundle.Constants.LOCAL_ADDRESSES;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -187,16 +187,18 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
     protected String getHost() throws UnknownHostException {
-        String host = serviceDiscoveryConfiguration.getPublishedHost();
-        if (Strings.isNullOrEmpty(host) || host.equals(Constants.DEFAULT_HOST)) {
-            host = InetAddress.getLocalHost()
-                    .getCanonicalHostName();
-        }
-        Preconditions.checkArgument(
-                !LOCALHOSTS.contains(host) ||
-                        LOCALHOSTS.stream().anyMatch(localhost -> serviceDiscoveryConfiguration.getZookeeper().contains(localhost)),
-                "Looks like publishedHost has been set to localhost/127.0.0.1 and zookeeper has not been set to localhost/127.0.0.1. This is wrong. \n" +
-                        "Set zookeeper host to localhost/127.0.0.1 in config in order to set publishedHost as localhost/127.0.0.1 for the running service");
+        val host = (Strings.isNullOrEmpty(serviceDiscoveryConfiguration.getPublishedHost())
+                || serviceDiscoveryConfiguration.getPublishedHost()
+                .equals(Constants.DEFAULT_HOST))
+                   ? InetAddress.getLocalHost()
+                           .getCanonicalHostName()
+                   : serviceDiscoveryConfiguration.getPublishedHost();
+
+        Preconditions.checkArgument(!LOCAL_ADDRESSES.contains(host) || LOCAL_ADDRESSES.stream()
+                        .anyMatch(localhost -> serviceDiscoveryConfiguration.getZookeeper()
+                                .contains(localhost)),
+                "Looks like publishedHost has been set to localhost/127.0.0.1 and zookeeper has not been set to localhost/127.0.0.1. This is wrong. \n"
+                        + "Set zookeeper host to localhost/127.0.0.1 in config in order to set publishedHost as localhost/127.0.0.1 for the running service");
         return host;
     }
 
