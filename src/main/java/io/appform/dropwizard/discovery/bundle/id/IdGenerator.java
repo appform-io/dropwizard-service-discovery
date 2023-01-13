@@ -152,8 +152,7 @@ public class IdGenerator {
      * @param domain Domain for constraint selection
      * @return Return generated id or empty if it was impossible to satisfy constraints and generate
      */
-    public static Optional<Id> generateWithConstraints(final String prefix,
-                                                       final String domain) {
+    public static Optional<Id> generateWithConstraints(String prefix, String domain) {
         return generateWithConstraints(prefix, DOMAIN_SPECIFIC_CONSTRAINTS.getOrDefault(domain, Collections.emptyList()), true);
     }
 
@@ -180,7 +179,7 @@ public class IdGenerator {
      * @param inConstraints Constraints that need to be validated.
      * @return Id if it could be generated
      */
-    public static Optional<Id> generateWithConstraints(final String prefix, final List<IdValidationConstraint> inConstraints) {
+    public static Optional<Id> generateWithConstraints(String prefix, final List<IdValidationConstraint> inConstraints) {
         return generateWithConstraints(prefix, inConstraints, false);
     }
 
