@@ -31,8 +31,16 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -118,9 +126,29 @@ public class IdGenerator {
      * @return Generated Id
      */
     public static Id generate(String prefix) {
+        return generate(prefix, IdType.DEFAULT);
+    }
+
+    public static Id generateCompact(String prefix) {
+        return generate(prefix, IdType.COMPACT);
+    }
+
+    public static Id generate(final String prefix,
+                              final IdType idType) {
         val idInfo = random();
         val dateTime = new DateTime(idInfo.time);
-        val id = String.format("%s%s%04d%03d", prefix, DATE_TIME_FORMATTER.print(dateTime), nodeId, idInfo.exponent);
+        val id = idType.accept(new IdType.IdTypeVisitor<String>() {
+            @Override
+            public String visitDefault() {
+                return String.format("%s%s%04d%03d", prefix, DATE_TIME_FORMATTER.print(dateTime), nodeId, idInfo.exponent);
+            }
+
+            @Override
+            public String visitCompact() {
+                val uniqueId = String.format("%s%04d%03d", DATE_TIME_FORMATTER.print(dateTime), nodeId, idInfo.exponent);
+                return String.format("%s%s", prefix, toBase36(uniqueId));
+            }
+        });
         return Id.builder()
                 .id(id)
                 .exponent(idInfo.exponent)
@@ -299,5 +327,10 @@ public class IdGenerator {
     private static class GenerationResult {
         Id id;
         IdValidationState state;
+    }
+
+    private static String toBase36(final String payload) {
+        byte[] bytes = payload.getBytes(StandardCharsets.UTF_8);
+        return new BigInteger(payload).toString(36).toUpperCase();
     }
 }
