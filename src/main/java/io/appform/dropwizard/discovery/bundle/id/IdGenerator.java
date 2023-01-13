@@ -133,30 +133,6 @@ public class IdGenerator {
         return generate(prefix, IdType.COMPACT);
     }
 
-    public static Id generate(final String prefix,
-                              final IdType idType) {
-        val idInfo = random();
-        val dateTime = new DateTime(idInfo.time);
-        val id = idType.accept(new IdType.IdTypeVisitor<String>() {
-            @Override
-            public String visitDefault() {
-                return String.format("%s%s%04d%03d", prefix, DATE_TIME_FORMATTER.print(dateTime), nodeId, idInfo.exponent);
-            }
-
-            @Override
-            public String visitCompact() {
-                val uniqueId = String.format("%s%04d%03d", DATE_TIME_FORMATTER.print(dateTime), nodeId, idInfo.exponent);
-                return String.format("%s%s", prefix, toBase36(uniqueId));
-            }
-        });
-        return Id.builder()
-                .id(id)
-                .exponent(idInfo.exponent)
-                .generatedDate(dateTime.toDate())
-                .node(nodeId)
-                .build();
-    }
-
     /**
      * Generate id that mathces all passed constraints.
      * NOTE: There are performance implications for this.
@@ -168,6 +144,19 @@ public class IdGenerator {
      */
     public static Optional<Id> generateWithConstraints(String prefix, String domain) {
         return generateWithConstraints(prefix, DOMAIN_SPECIFIC_CONSTRAINTS.getOrDefault(domain, Collections.emptyList()), true);
+    }
+
+    /**
+     * Generate id that matches all passed constraints.
+     * NOTE: There are performance implications for this.
+     * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
+     *
+     * @param prefix String prefix
+     * @param domain Domain for constraint selection
+     * @return Return generated id or empty if it was impossible to satisfy constraints and generate
+     */
+    public static Optional<Id> generateCompactWithConstraints(String prefix, String domain) {
+        return generateCompactWithConstraints(prefix, DOMAIN_SPECIFIC_CONSTRAINTS.getOrDefault(domain, Collections.emptyList()), true);
     }
 
     /**
@@ -189,13 +178,38 @@ public class IdGenerator {
      * NOTE: There are performance implications for this.
      * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
      *
+     * @param prefix     String prefix
+     * @param domain     Domain for constraint selection
+     * @param skipGlobal Skip global constrains and use only passed ones
+     * @return Id if it could be generated
+     */
+    public static Optional<Id> generateCompactWithConstraints(String prefix, String domain, boolean skipGlobal) {
+        return generateCompactWithConstraints(prefix, DOMAIN_SPECIFIC_CONSTRAINTS.getOrDefault(domain, Collections.emptyList()), skipGlobal);
+    }
+
+    /**
+     * Generate id that mathces all passed constraints.
+     * NOTE: There are performance implications for this.
+     * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
+     *
      * @param prefix        String prefix
      * @param inConstraints Constraints that need to be validated.
      * @return Id if it could be generated
      */
-    public static Optional<Id> generateWithConstraints(
-            String prefix,
-            final List<IdValidationConstraint> inConstraints) {
+    public static Optional<Id> generateWithConstraints(final String prefix, final List<IdValidationConstraint> inConstraints) {
+        return generateWithConstraints(prefix, inConstraints, false);
+    }
+
+    /**
+     * Generate id that mathces all passed constraints.
+     * NOTE: There are performance implications for this.
+     * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
+     *
+     * @param prefix        String prefix
+     * @param inConstraints Constraints that need to be validated.
+     * @return Id if it could be generated
+     */
+    public static Optional<Id> generateCompactWithConstraints(final String prefix, final List<IdValidationConstraint> inConstraints) {
         return generateWithConstraints(prefix, inConstraints, false);
     }
 
@@ -238,14 +252,32 @@ public class IdGenerator {
      * @param skipGlobal    Skip global constrains and use only passed ones
      * @return Id if it could be generated
      */
-    public static Optional<Id> generateWithConstraints(
-            String prefix,
-            final List<IdValidationConstraint> inConstraints,
-            boolean skipGlobal) {
+    public static Optional<Id> generateWithConstraints(String prefix, final List<IdValidationConstraint> inConstraints, boolean skipGlobal) {
+        return generateImpl(prefix, inConstraints, skipGlobal, IdType.DEFAULT);
+    }
+
+    /**
+     * Generate id that mathces all passed constraints.
+     * NOTE: There are performance implications for this.
+     * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
+     *
+     * @param prefix        String prefix
+     * @param inConstraints Constraints that need to be validate.
+     * @param skipGlobal    Skip global constrains and use only passed ones
+     * @return Id if it could be generated
+     */
+    public static Optional<Id> generateCompactWithConstraints(String prefix, final List<IdValidationConstraint> inConstraints, boolean skipGlobal) {
+        return generateImpl(prefix, inConstraints, skipGlobal, IdType.COMPACT);
+    }
+
+    private static Optional<Id> generateImpl(final String prefix,
+                                             final List<IdValidationConstraint> constraints,
+                                             final boolean skipGlobal,
+                                             final IdType idType){
         return Optional.ofNullable(RETRIER.get(
                         () -> {
-                            Id id = generate(prefix);
-                            return new GenerationResult(id, validateId(inConstraints, id, skipGlobal));
+                            Id id = generate(prefix, idType);
+                            return new GenerationResult(id, validateId(constraints, id, skipGlobal));
                         }))
                 .filter(generationResult -> generationResult.getState() == IdValidationState.VALID)
                 .map(GenerationResult::getId);
@@ -327,6 +359,30 @@ public class IdGenerator {
     private static class GenerationResult {
         Id id;
         IdValidationState state;
+    }
+
+    private static Id generate(final String prefix,
+                               final IdType idType) {
+        val idInfo = random();
+        val dateTime = new DateTime(idInfo.time);
+        val id = idType.accept(new IdType.IdTypeVisitor<String>() {
+            @Override
+            public String visitDefault() {
+                return String.format("%s%s%04d%03d", prefix, DATE_TIME_FORMATTER.print(dateTime), nodeId, idInfo.exponent);
+            }
+
+            @Override
+            public String visitCompact() {
+                val uniqueId = String.format("%s%04d%03d", DATE_TIME_FORMATTER.print(dateTime), nodeId, idInfo.exponent);
+                return String.format("%s%s", prefix, toBase36(uniqueId));
+            }
+        });
+        return Id.builder()
+                .id(id)
+                .exponent(idInfo.exponent)
+                .generatedDate(dateTime.toDate())
+                .node(nodeId)
+                .build();
     }
 
     private static String toBase36(final String payload) {
