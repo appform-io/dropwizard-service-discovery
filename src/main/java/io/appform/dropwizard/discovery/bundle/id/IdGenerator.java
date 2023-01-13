@@ -134,7 +134,7 @@ public class IdGenerator {
                               final IdFormatter idFormatter) {
         val idInfo = random();
         val dateTime = new DateTime(idInfo.time);
-        val id = idFormatter.transform(prefix, dateTime, nodeId, idInfo.exponent);
+        val id = idFormatter.format(prefix, dateTime, nodeId, idInfo.exponent);
         return Id.builder()
                 .id(id)
                 .exponent(idInfo.exponent)
