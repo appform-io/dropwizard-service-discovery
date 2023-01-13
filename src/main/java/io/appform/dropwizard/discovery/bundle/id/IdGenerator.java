@@ -24,6 +24,9 @@ import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
 import dev.failsafe.RetryPolicy;
 import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstraint;
+import io.appform.dropwizard.discovery.bundle.id.formatter.IdFormatter;
+import io.appform.dropwizard.discovery.bundle.id.formatter.IdFormatters;
+import io.appform.dropwizard.discovery.bundle.id.request.IdGenerationRequest;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -31,8 +34,6 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -126,11 +127,20 @@ public class IdGenerator {
      * @return Generated Id
      */
     public static Id generate(String prefix) {
-        return generate(prefix, IdType.DEFAULT);
+        return generate(prefix, IdFormatters.original());
     }
 
-    public static Id generateCompact(String prefix) {
-        return generate(prefix, IdType.COMPACT);
+    public static Id generate(final String prefix,
+                              final IdFormatter idFormatter) {
+        val idInfo = random();
+        val dateTime = new DateTime(idInfo.time);
+        val id = idFormatter.transform(prefix, dateTime, nodeId, idInfo.exponent);
+        return Id.builder()
+                .id(id)
+                .exponent(idInfo.exponent)
+                .generatedDate(dateTime.toDate())
+                .node(nodeId)
+                .build();
     }
 
     /**
@@ -142,21 +152,9 @@ public class IdGenerator {
      * @param domain Domain for constraint selection
      * @return Return generated id or empty if it was impossible to satisfy constraints and generate
      */
-    public static Optional<Id> generateWithConstraints(String prefix, String domain) {
+    public static Optional<Id> generateWithConstraints(final String prefix,
+                                                       final String domain) {
         return generateWithConstraints(prefix, DOMAIN_SPECIFIC_CONSTRAINTS.getOrDefault(domain, Collections.emptyList()), true);
-    }
-
-    /**
-     * Generate id that matches all passed constraints.
-     * NOTE: There are performance implications for this.
-     * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
-     *
-     * @param prefix String prefix
-     * @param domain Domain for constraint selection
-     * @return Return generated id or empty if it was impossible to satisfy constraints and generate
-     */
-    public static Optional<Id> generateCompactWithConstraints(String prefix, String domain) {
-        return generateCompactWithConstraints(prefix, DOMAIN_SPECIFIC_CONSTRAINTS.getOrDefault(domain, Collections.emptyList()), true);
     }
 
     /**
@@ -178,39 +176,12 @@ public class IdGenerator {
      * NOTE: There are performance implications for this.
      * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
      *
-     * @param prefix     String prefix
-     * @param domain     Domain for constraint selection
-     * @param skipGlobal Skip global constrains and use only passed ones
-     * @return Id if it could be generated
-     */
-    public static Optional<Id> generateCompactWithConstraints(String prefix, String domain, boolean skipGlobal) {
-        return generateCompactWithConstraints(prefix, DOMAIN_SPECIFIC_CONSTRAINTS.getOrDefault(domain, Collections.emptyList()), skipGlobal);
-    }
-
-    /**
-     * Generate id that mathces all passed constraints.
-     * NOTE: There are performance implications for this.
-     * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
-     *
      * @param prefix        String prefix
      * @param inConstraints Constraints that need to be validated.
      * @return Id if it could be generated
      */
     public static Optional<Id> generateWithConstraints(final String prefix, final List<IdValidationConstraint> inConstraints) {
         return generateWithConstraints(prefix, inConstraints, false);
-    }
-
-    /**
-     * Generate id that mathces all passed constraints.
-     * NOTE: There are performance implications for this.
-     * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
-     *
-     * @param prefix        String prefix
-     * @param inConstraints Constraints that need to be validated.
-     * @return Id if it could be generated
-     */
-    public static Optional<Id> generateCompactWithConstraints(final String prefix, final List<IdValidationConstraint> inConstraints) {
-        return generateCompactWithConstraints(prefix, inConstraints, false);
     }
 
     /**
@@ -253,31 +224,19 @@ public class IdGenerator {
      * @return Id if it could be generated
      */
     public static Optional<Id> generateWithConstraints(String prefix, final List<IdValidationConstraint> inConstraints, boolean skipGlobal) {
-        return generateImpl(prefix, inConstraints, skipGlobal, IdType.DEFAULT);
+        return generate(IdGenerationRequest.builder()
+                .prefix(prefix)
+                .constraints(inConstraints)
+                .skipGlobal(skipGlobal)
+                .idFormatter(IdFormatters.original())
+                .build());
     }
 
-    /**
-     * Generate id that mathces all passed constraints.
-     * NOTE: There are performance implications for this.
-     * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
-     *
-     * @param prefix        String prefix
-     * @param inConstraints Constraints that need to be validate.
-     * @param skipGlobal    Skip global constrains and use only passed ones
-     * @return Id if it could be generated
-     */
-    public static Optional<Id> generateCompactWithConstraints(String prefix, final List<IdValidationConstraint> inConstraints, boolean skipGlobal) {
-        return generateImpl(prefix, inConstraints, skipGlobal, IdType.COMPACT);
-    }
-
-    private static Optional<Id> generateImpl(final String prefix,
-                                             final List<IdValidationConstraint> constraints,
-                                             final boolean skipGlobal,
-                                             final IdType idType){
+    public static Optional<Id> generate(final IdGenerationRequest request) {
         return Optional.ofNullable(RETRIER.get(
                         () -> {
-                            Id id = generate(prefix, idType);
-                            return new GenerationResult(id, validateId(constraints, id, skipGlobal));
+                            Id id = generate(request.getPrefix(), request.getIdFormatter());
+                            return new GenerationResult(id, validateId(request.getConstraints(), id, request.isSkipGlobal()));
                         }))
                 .filter(generationResult -> generationResult.getState() == IdValidationState.VALID)
                 .map(GenerationResult::getId);
@@ -359,34 +318,5 @@ public class IdGenerator {
     private static class GenerationResult {
         Id id;
         IdValidationState state;
-    }
-
-    private static Id generate(final String prefix,
-                               final IdType idType) {
-        val idInfo = random();
-        val dateTime = new DateTime(idInfo.time);
-        val id = idType.accept(new IdType.IdTypeVisitor<String>() {
-            @Override
-            public String visitDefault() {
-                return String.format("%s%s%04d%03d", prefix, DATE_TIME_FORMATTER.print(dateTime), nodeId, idInfo.exponent);
-            }
-
-            @Override
-            public String visitCompact() {
-                val uniqueId = String.format("%s%04d%03d", DATE_TIME_FORMATTER.print(dateTime), nodeId, idInfo.exponent);
-                return String.format("%s%s", prefix, toBase36(uniqueId));
-            }
-        });
-        return Id.builder()
-                .id(id)
-                .exponent(idInfo.exponent)
-                .generatedDate(dateTime.toDate())
-                .node(nodeId)
-                .build();
-    }
-
-    private static String toBase36(final String payload) {
-        byte[] bytes = payload.getBytes(StandardCharsets.UTF_8);
-        return new BigInteger(payload).toString(36).toUpperCase();
     }
 }
