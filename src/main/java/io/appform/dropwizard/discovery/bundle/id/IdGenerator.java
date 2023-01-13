@@ -210,7 +210,7 @@ public class IdGenerator {
      * @return Id if it could be generated
      */
     public static Optional<Id> generateCompactWithConstraints(final String prefix, final List<IdValidationConstraint> inConstraints) {
-        return generateWithConstraints(prefix, inConstraints, false);
+        return generateCompactWithConstraints(prefix, inConstraints, false);
     }
 
     /**
