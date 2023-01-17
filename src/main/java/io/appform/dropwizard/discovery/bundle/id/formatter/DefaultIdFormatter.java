@@ -9,10 +9,9 @@ public class DefaultIdFormatter implements IdFormatter {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormat.forPattern("yyMMddHHmmssSSS");
 
     @Override
-    public String format(final String prefix,
-                         final DateTime dateTime,
+    public String format(final DateTime dateTime,
                          final int nodeId,
                          final int randomNonce) {
-        return String.format("%s%s%04d%03d", prefix, DATE_TIME_FORMATTER.print(dateTime), nodeId, randomNonce);
+        return String.format("%s%04d%03d", DATE_TIME_FORMATTER.print(dateTime), nodeId, randomNonce);
     }
 }

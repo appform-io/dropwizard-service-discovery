@@ -4,8 +4,7 @@ import org.joda.time.DateTime;
 
 public interface IdFormatter {
 
-    String format(final String prefix,
-                  final DateTime dateTime,
+    String format(final DateTime dateTime,
                   final int nodeId,
                   final int randomNonce);
 

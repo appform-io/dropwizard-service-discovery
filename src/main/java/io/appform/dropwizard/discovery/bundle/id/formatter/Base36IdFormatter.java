@@ -1,23 +1,24 @@
 package io.appform.dropwizard.discovery.bundle.id.formatter;
 
-import lombok.val;
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
+import javax.inject.Singleton;
 import java.math.BigInteger;
 
+@Singleton
 public class Base36IdFormatter implements IdFormatter {
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormat.forPattern("yyMMddHHmmssSSS");
+    private final IdFormatter idFormatter;
+
+    public Base36IdFormatter(IdFormatter idFormatter) {
+        this.idFormatter = idFormatter;
+    }
 
     @Override
-    public String format(final String prefix,
-                         final DateTime dateTime,
+    public String format(final DateTime dateTime,
                          final int nodeId,
                          final int randomNonce) {
-        val uniqueId = String.format("%s%04d%03d", DATE_TIME_FORMATTER.print(dateTime), nodeId, randomNonce);
-        return String.format("%s%s", prefix, toBase36(uniqueId));
+        return toBase36(idFormatter.format(dateTime, nodeId, randomNonce));
     }
 
     private static String toBase36(final String payload) {

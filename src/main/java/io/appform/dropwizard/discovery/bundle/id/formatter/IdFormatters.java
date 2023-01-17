@@ -6,7 +6,7 @@ import lombok.experimental.UtilityClass;
 public class IdFormatters {
 
     private static final IdFormatter originalIdFormatter = new DefaultIdFormatter();
-    private static final IdFormatter base36IdFormatter = new Base36IdFormatter();
+    private static final IdFormatter base36IdFormatter = new Base36IdFormatter(originalIdFormatter);
 
     public static IdFormatter original() {
         return originalIdFormatter;
