@@ -30,7 +30,7 @@ import java.io.IOException;
  * Test performance between different constructs
  */
 @Slf4j
-public class Base36IdGeneratorPerfTest extends BenchmarkTest {
+public class IdGeneratorPerfTest extends BenchmarkTest {
 
     @State(Scope.Benchmark)
     public static class BenchmarkState {
@@ -43,7 +43,13 @@ public class Base36IdGeneratorPerfTest extends BenchmarkTest {
 
     @SneakyThrows
     @Benchmark
-    public void testGenerate(Blackhole blackhole, BenchmarkState state) {
+    public void testGenerateBase36(Blackhole blackhole, BenchmarkState state) {
         IdGenerator.generate("X", IdFormatters.base36());
+    }
+
+    @SneakyThrows
+    @Benchmark
+    public void testGenerate(Blackhole blackhole, BenchmarkState state) {
+        IdGenerator.generate("X", IdFormatters.original());
     }
 }

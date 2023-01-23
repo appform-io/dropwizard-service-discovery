@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstraint;
 import io.appform.dropwizard.discovery.bundle.id.constraints.impl.JavaHashCodeBasedKeyPartitioner;
 import io.appform.dropwizard.discovery.bundle.id.constraints.impl.PartitionValidator;
+import io.appform.dropwizard.discovery.bundle.id.formatter.IdFormatters;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -28,7 +29,11 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.time.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Optional;
@@ -94,8 +99,22 @@ class IdGeneratorTest {
         executorService.shutdownNow();
         val totalCount = runners.stream().mapToLong(Runner::getCount).sum();
         log.debug("Generated ID count: {}", totalCount);
-        log.debug("Generated ID rate: {}/sec", totalCount/10);
+        log.debug("Generated ID rate: {}/sec", totalCount / 10);
         Assertions.assertTrue(totalCount > 0);
+    }
+
+    @Test
+    void testGenerateOriginal() {
+        IdGenerator.initialize(23);
+        String id = IdGenerator.generate("TEST", IdFormatters.original()).getId();
+        Assertions.assertEquals(26, id.length());
+    }
+
+    @Test
+    void testGenerateBase36() {
+        IdGenerator.initialize(23);
+        String id = IdGenerator.generate("TEST", IdFormatters.base36()).getId();
+        Assertions.assertEquals(18, id.length());
     }
 
 
@@ -114,7 +133,7 @@ class IdGeneratorTest {
         executorService.shutdownNow();
         val totalCount = runners.stream().mapToLong(ConstraintRunner::getCount).sum();
         log.debug("Generated ID count: {}", totalCount);
-        log.debug("Generated ID rate: {}/sec", totalCount/10);
+        log.debug("Generated ID rate: {}/sec", totalCount / 10);
         Assertions.assertTrue(totalCount > 0);
 
     }
@@ -154,7 +173,7 @@ class IdGeneratorTest {
     }
 
     @Test
-    void testParseSuccess(){
+    void testParseSuccess() {
         val idString = "ABC2011250959030643972247";
         val id = IdGenerator.parse(idString).orElse(null);
         Assertions.assertNotNull(id);
@@ -166,7 +185,7 @@ class IdGeneratorTest {
     }
 
     @Test
-    void testParseSuccessAfterGeneration(){
+    void testParseSuccessAfterGeneration() {
         val generatedId = IdGenerator.generate("TEST123");
         val parsedId = IdGenerator.parse(generatedId.getId()).orElse(null);
         Assertions.assertNotNull(parsedId);
@@ -184,11 +203,11 @@ class IdGeneratorTest {
                         ZonedDateTime.of(
                                 LocalDateTime.of(
                                         year, month, day, hour, min, sec, Math.multiplyExact(ms, 1000000)
-                                                ),
+                                ),
                                 zoneId
-                                        )
-                            )
-                        );
+                        )
+                )
+        );
     }
 
 
