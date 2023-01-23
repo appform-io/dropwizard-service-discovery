@@ -1,0 +1,8 @@
+{
+  "name" : "io.appform.dropwizard.discovery.bundle.id.IdGeneratorPerfTest.testGenerateBase36",
+  "mode" : "Throughput",
+  "iterations" : 4,
+  "threads" : 1,
+  "forks" : 3,
+  "mean_ops" : 306468.0781713726
+}
