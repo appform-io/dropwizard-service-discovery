@@ -1,7 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [2.0.28-2.RC6]
+## [2.0.28-5]
+- Removed region variable and added a region resolver added
+- Upgraded ranger version to 1.0-RC9
+
+## [2.0.28-4]
 - Freeing up wasted ids in collision checker
 
 ## [2.0.28-2.RC5]
