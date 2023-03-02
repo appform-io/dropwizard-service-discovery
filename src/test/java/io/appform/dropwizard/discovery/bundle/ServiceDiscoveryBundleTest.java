@@ -23,7 +23,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.appform.dropwizard.discovery.bundle.resolvers.CriteriaResolver;
-import io.appform.dropwizard.discovery.bundle.resolvers.DefaultRegionResolver;
+import io.appform.dropwizard.discovery.bundle.resolvers.NodeInfoResolver;
+import io.appform.ranger.common.server.ShardInfo;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
@@ -32,6 +33,7 @@ import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.setup.AdminEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import jdk.nashorn.internal.runtime.regexp.joni.Config;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.curator.test.TestingCluster;
@@ -77,8 +79,8 @@ class ServiceDiscoveryBundleTest {
         }
 
         @Override
-        protected CriteriaResolver<String> getRegionResolver(){
-            return new DefaultRegionResolver();
+        protected CriteriaResolver<ShardInfo, ServiceDiscoveryConfiguration> getNodeInfoResolver(){
+            return new NodeInfoResolver();
         }
     };
 

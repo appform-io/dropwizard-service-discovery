@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [2.0.28-5]
-- Removed region variable and added a region resolver added
+- Removed region variable and added a node info resolver instead
 - Upgraded ranger version to 1.0-RC9
 
 ## [2.0.28-4]

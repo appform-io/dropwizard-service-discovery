@@ -32,7 +32,7 @@ import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstra
 import io.appform.dropwizard.discovery.bundle.monitors.DropwizardHealthMonitor;
 import io.appform.dropwizard.discovery.bundle.monitors.DropwizardServerStartupCheck;
 import io.appform.dropwizard.discovery.bundle.resolvers.CriteriaResolver;
-import io.appform.dropwizard.discovery.bundle.resolvers.DefaultRegionResolver;
+import io.appform.dropwizard.discovery.bundle.resolvers.NodeInfoResolver;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.BIRTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.DropwizardServerStatus;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.OORTask;
@@ -161,8 +161,8 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
 
     protected abstract String getServiceName(T configuration);
 
-    protected CriteriaResolver<String> getRegionResolver(){
-        return new DefaultRegionResolver();
+    protected CriteriaResolver<ShardInfo, ServiceDiscoveryConfiguration> getNodeInfoResolver(){
+        return new NodeInfoResolver();
     }
 
     /**
@@ -246,12 +246,8 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
             String serviceName,
             String hostname,
             int port) {
-        val regionResolver = getRegionResolver();
-        val nodeInfo = ShardInfo.builder()
-                .environment(serviceDiscoveryConfiguration.getEnvironment())
-                .region(regionResolver.getValue())
-                .tags(serviceDiscoveryConfiguration.getTags())
-                .build();
+        val nodeInfoResolver = getNodeInfoResolver();
+        val nodeInfo = nodeInfoResolver.getValue(serviceDiscoveryConfiguration);
         val initialDelayForMonitor = serviceDiscoveryConfiguration.getInitialDelaySeconds() > 1
                                      ? serviceDiscoveryConfiguration.getInitialDelaySeconds() - 1
                                      : 0;

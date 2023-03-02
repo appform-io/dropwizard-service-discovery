@@ -1,7 +1,7 @@
 package io.appform.dropwizard.discovery.bundle.resolvers;
 
-public interface CriteriaResolver<T> {
+public interface CriteriaResolver<T, A> {
 
-  T getValue();
+  T getValue(A arg);
 
 }
