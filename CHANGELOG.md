@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.28-3.RC5]
+- Removed region variable and added a region resolver added
+- Upgraded ranger version to 1.0-RC9
+
 ## [2.0.28-2.RC5]
 - Added region and tags to nodeData, to be able to run Predicate atop it with a finder.
 - Upgraded ranger version to 1.0-RC7

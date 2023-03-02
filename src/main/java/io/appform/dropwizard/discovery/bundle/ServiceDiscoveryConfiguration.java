@@ -17,6 +17,7 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Strings;
 import lombok.*;
 
@@ -73,8 +74,6 @@ public class ServiceDiscoveryConfiguration {
 
     private int dropwizardCheckStaleness;
 
-    private String region;
-
     private Set<String> tags;
 
     @Builder
@@ -91,7 +90,6 @@ public class ServiceDiscoveryConfiguration {
             boolean initialRotationStatus,
             int dropwizardCheckInterval,
             int dropwizardCheckStaleness,
-            String region,
             Set<String> tags) {
         this.namespace = Strings.isNullOrEmpty(namespace)
                          ? Constants.DEFAULT_NAMESPACE
@@ -115,7 +113,6 @@ public class ServiceDiscoveryConfiguration {
                                        ? Constants.DEFAULT_DW_CHECK_INTERVAL
                                        : dropwizardCheckInterval;
         this.dropwizardCheckStaleness = dropwizardCheckStaleness;
-        this.region = region;
         this.tags = tags;
     }
 }

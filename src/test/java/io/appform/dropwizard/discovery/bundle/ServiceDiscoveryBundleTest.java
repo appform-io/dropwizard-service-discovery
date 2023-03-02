@@ -22,6 +22,8 @@ import ch.qos.logback.classic.Logger;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.appform.dropwizard.discovery.bundle.resolvers.CriteriaResolver;
+import io.appform.dropwizard.discovery.bundle.resolvers.DefaultRegionResolver;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
@@ -74,6 +76,10 @@ class ServiceDiscoveryBundleTest {
             return "TestService";
         }
 
+        @Override
+        protected CriteriaResolver<String> getRegionResolver(){
+            return new DefaultRegionResolver();
+        }
     };
 
     private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
@@ -130,6 +136,7 @@ class ServiceDiscoveryBundleTest {
         Assertions.assertEquals("testing", info.getNodeData().getEnvironment());
         Assertions.assertEquals("TestHost", info.getHost());
         Assertions.assertEquals(8021, info.getPort());
+        Assertions.assertNull(info.getNodeData().getRegion());
 
         status = HealthcheckStatus.unhealthy;
 
