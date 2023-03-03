@@ -5,7 +5,7 @@ import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class NodeInfoResolverTest {
+class DefaultNodeInfoResolverTest {
 
   @Test
   void testNodeInfoResolver(){
@@ -18,8 +18,8 @@ class NodeInfoResolverTest {
       .publishedPort(8021)
       .initialRotationStatus(true)
       .build();
-    val resolver = new NodeInfoResolver();
-    val nodeInfo = resolver.getValue(configuration);
+    val resolver = new DefaultNodeInfoResolver();
+    val nodeInfo = resolver.node(configuration);
     Assertions.assertNotNull(nodeInfo);
     Assertions.assertEquals("testing", configuration.getEnvironment());
     Assertions.assertNull(nodeInfo.getRegion());
