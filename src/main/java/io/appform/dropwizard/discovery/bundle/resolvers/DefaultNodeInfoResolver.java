@@ -16,9 +16,7 @@ public class DefaultNodeInfoResolver implements
   @Override
   public ShardInfo node(ServiceDiscoveryConfiguration configuration) {
     val region = System.getenv(FARM_ID);
-    if(null == region){
-      log.debug("The value of the env variable FARM_ID is null. Setting the region to null on node data");
-    }
+    log.debug("The farm id received from the env variable FARM_ID is {}. Setting the same in nodeInfo", region);
     return ShardInfo.builder()
       .environment(configuration.getEnvironment())
       .region(region)
