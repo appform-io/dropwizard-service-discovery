@@ -71,6 +71,11 @@ public class App extends Application<AppConfig> {
             protected int getPort(AppConfig appConfig) {
                 return 8080; //Parse config or hardcode
             }
+            
+            @Override
+            protected NodeInfoResolver createNodeInfoResolver(){
+                return new DefaultNodeInfoResolver();
+            }
         };
         
         bootstrap.addBundle(bundle);
