@@ -18,10 +18,9 @@
 package io.appform.dropwizard.discovery.bundle.id;
 
 
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.util.stream.IntStream;
 
 /**
  * Test on {@link CollisionChecker}

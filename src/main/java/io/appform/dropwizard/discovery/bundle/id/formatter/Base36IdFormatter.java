@@ -1,8 +1,7 @@
 package io.appform.dropwizard.discovery.bundle.id.formatter;
 
-import org.joda.time.DateTime;
-
 import java.math.BigInteger;
+import org.joda.time.DateTime;
 
 public class Base36IdFormatter implements IdFormatter {
 

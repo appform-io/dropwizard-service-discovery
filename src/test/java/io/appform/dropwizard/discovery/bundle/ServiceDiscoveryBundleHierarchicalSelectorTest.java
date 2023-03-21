@@ -17,16 +17,26 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
+import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodeAbsence;
+import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodePresence;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
+import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
+import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.setup.AdminEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -34,21 +44,12 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.curator.test.TestingCluster;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.LocalConnector;
-import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
-
-import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodeAbsence;
-import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodePresence;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 
 @Slf4j
@@ -60,8 +61,9 @@ class ServiceDiscoveryBundleHierarchicalSelectorTest {
     private final LifecycleEnvironment lifecycleEnvironment = new LifecycleEnvironment(metricRegistry);
     private final Environment environment = mock(Environment.class);
     private final Bootstrap<?> bootstrap = mock(Bootstrap.class);
-    private Configuration configuration;
-    private final Server server = mock(Server.class);
+    private Configuration configuration = mock(Configuration.class);
+    private final DefaultServerFactory serverFactory = mock(DefaultServerFactory.class);
+    private final HttpConnectorFactory connectorFactory  = mock(HttpConnectorFactory.class);
 
     static {
         val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
@@ -95,11 +97,8 @@ class ServiceDiscoveryBundleHierarchicalSelectorTest {
 
     @BeforeEach
     void setup() throws Exception {
-        val connector = mock(LocalConnector.class);
-        when(connector.getConnectionFactory(Mockito.anyString())).thenReturn(null);
-        val connectors = new Connector[1];
-        connectors[0] = connector;
-        when(server.getConnectors()).thenReturn(connectors);
+        when(serverFactory.getApplicationConnectors()).thenReturn(Lists.newArrayList(connectorFactory));
+        when(configuration.getServerFactory()).thenReturn(serverFactory);
 
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);
@@ -123,7 +122,6 @@ class ServiceDiscoveryBundleHierarchicalSelectorTest {
                 .build();
         bundle.initialize(bootstrap);
         bundle.run(new TestConfig(serviceDiscoveryConfiguration), environment);
-        bundle.getServiceProviderListener().serverStarted(server);
         bundle.getServerStatus().markStarted();
         for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()) {
             lifeCycle.start();

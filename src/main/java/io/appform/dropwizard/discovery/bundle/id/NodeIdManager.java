@@ -20,16 +20,15 @@ package io.appform.dropwizard.discovery.bundle.id;
 import com.github.rholder.retry.RetryException;
 import com.github.rholder.retry.RetryerBuilder;
 import com.github.rholder.retry.StopStrategies;
+import java.security.SecureRandom;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-
-import java.security.SecureRandom;
-import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by santanu on 2/5/16.

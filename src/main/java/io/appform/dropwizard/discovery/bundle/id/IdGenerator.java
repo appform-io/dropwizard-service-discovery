@@ -18,7 +18,6 @@
 package io.appform.dropwizard.discovery.bundle.id;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeExecutor;
@@ -27,13 +26,6 @@ import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstra
 import io.appform.dropwizard.discovery.bundle.id.formatter.IdFormatter;
 import io.appform.dropwizard.discovery.bundle.id.formatter.IdFormatters;
 import io.appform.dropwizard.discovery.bundle.id.request.IdGenerationRequest;
-import lombok.Value;
-import lombok.extern.slf4j.Slf4j;
-import lombok.val;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,6 +35,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import lombok.Value;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 /**
  * Id generation
