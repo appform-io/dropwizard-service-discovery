@@ -17,16 +17,26 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
+import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodeAbsence;
+import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodePresence;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
+import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
+import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.setup.AdminEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -40,11 +50,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
-import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodeAbsence;
-import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodePresence;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 
 @Slf4j
 class ServiceDiscoveryBundleCustomHostPortTest {
@@ -56,6 +61,8 @@ class ServiceDiscoveryBundleCustomHostPortTest {
     private final Environment environment = mock(Environment.class);
     private final Bootstrap<?> bootstrap = mock(Bootstrap.class);
     private final Configuration configuration = mock(Configuration.class);
+    private final DefaultServerFactory serverFactory = mock(DefaultServerFactory.class);
+    private final HttpConnectorFactory connectorFactory  = mock(HttpConnectorFactory.class);
 
     static {
         val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
@@ -92,6 +99,8 @@ class ServiceDiscoveryBundleCustomHostPortTest {
 
     @BeforeEach
     void setup() throws Exception {
+        when(serverFactory.getApplicationConnectors()).thenReturn(Lists.newArrayList(connectorFactory));
+        when(configuration.getServerFactory()).thenReturn(serverFactory);
 
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);

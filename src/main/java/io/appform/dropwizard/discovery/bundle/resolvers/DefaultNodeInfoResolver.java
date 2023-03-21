@@ -8,13 +8,12 @@ import lombok.val;
 
 @NoArgsConstructor
 @Slf4j
-public class DefaultNodeInfoResolver implements
-  NodeInfoResolver {
+public class DefaultNodeInfoResolver implements NodeInfoResolver {
 
   private static final String FARM_ID = "FARM_ID";
 
   @Override
-  public ShardInfo node(ServiceDiscoveryConfiguration configuration) {
+  public ShardInfo resolve(ServiceDiscoveryConfiguration configuration) {
     val region = System.getenv(FARM_ID);
     log.debug("The region received from the env variable FARM_ID is {}. Setting the same in nodeInfo", region);
     return ShardInfo.builder()

@@ -19,7 +19,6 @@ package io.appform.dropwizard.discovery.bundle.healthchecks;
 
 import io.appform.ranger.core.healthcheck.Healthcheck;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
-
 import java.util.List;
 
 /**

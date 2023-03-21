@@ -19,7 +19,6 @@ package io.appform.dropwizard.discovery.bundle.id.constraints.impl;
 
 import com.google.common.hash.Hashing;
 import io.appform.dropwizard.discovery.bundle.id.Id;
-
 import java.nio.charset.StandardCharsets;
 
 /**

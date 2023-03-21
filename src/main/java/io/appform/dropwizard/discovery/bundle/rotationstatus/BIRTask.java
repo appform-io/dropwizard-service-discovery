@@ -19,11 +19,10 @@ package io.appform.dropwizard.discovery.bundle.rotationstatus;
 
 
 import io.dropwizard.servlets.tasks.Task;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Admin task to take node bir in ranger
