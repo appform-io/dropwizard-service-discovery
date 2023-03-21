@@ -87,9 +87,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
     private ServiceProvider<ShardInfo, ZkNodeDataSerializer<ShardInfo>> serviceProvider;
 
-    @Getter
-    @VisibleForTesting
-    private ServiceDiscoveryManager discoveryManager;
+
     @Getter
     private CuratorFramework curator;
     @Getter
@@ -103,6 +101,9 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     @Getter
     @VisibleForTesting
     private PortSchemeResolver portSchemeResolver;
+    @Getter
+    @VisibleForTesting
+    private ServiceProviderListener serviceProviderListener;
 
     protected ServiceDiscoveryBundle() {
         globalIdConstraints = Collections.emptyList();
@@ -147,7 +148,6 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 hostname,
                 port
         );
-        discoveryManager = new ServiceDiscoveryManager(serviceName, serviceProviderBuilder);
         serviceDiscoveryClient = buildDiscoveryClient(
                 environment,
                 namespace,
@@ -156,27 +156,16 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 useInitialCriteria,
                 shardSelector
         );
-        environment.lifecycle().addServerLifecycleListener(discoveryManager);
+        serviceProviderListener = new ServiceProviderListener(serviceName, serviceProviderBuilder);
+        environment.lifecycle().addServerLifecycleListener(serviceProviderListener);
+        environment.lifecycle().manage(new ServiceDiscoveryManager());
         environment.jersey()
                 .register(new InfoResource(serviceDiscoveryClient));
         environment.admin()
                 .addTask(new OORTask(rotationStatus));
         environment.admin()
                 .addTask(new BIRTask(rotationStatus));
-        environment.lifecycle().manage(new Managed() {
-            @Override
-            public void start() {
-                //Nothing to do here. Everything is done in the serverLifeCycleManager
-            }
 
-            @Override
-            public void stop() {
-                serviceDiscoveryClient.stop();
-                serviceProvider.stop();
-                curator.close();
-                IdGenerator.cleanUp();
-            }
-        });
     }
 
     protected ShardSelector<ShardInfo, MapBasedServiceRegistry<ShardInfo>> getShardSelector(T configuration) {
@@ -316,11 +305,12 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
         return providerBuilder;
     }
 
-    public class ServiceDiscoveryManager implements ServerLifecycleListener {
+    //Protected because, need the method ServerStarted to be visible from outside for testing.
+    protected class ServiceProviderListener implements ServerLifecycleListener {
         private final String serviceName;
         protected final ZkServiceProviderBuilder<ShardInfo> serviceProviderBuilder;
 
-        public ServiceDiscoveryManager(String serviceName,
+        public ServiceProviderListener(String serviceName,
           ZkServiceProviderBuilder<ShardInfo> serviceProviderBuilder) {
             this.serviceName = serviceName;
             this.serviceProviderBuilder = serviceProviderBuilder;
@@ -328,7 +318,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
 
         @Override
         public void serverStarted(Server server) {
-            log.debug("Starting the service discovery manager");
+            log.debug("Starting the service provider lifecycle listener");
             serviceProviderBuilder.withPortScheme(portSchemeResolver.resolve(server));
             serviceProvider = serviceProviderBuilder.build();
             curator.start();
@@ -336,7 +326,24 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
             serviceDiscoveryClient.start();
             val nodeIdManager = new NodeIdManager(curator, serviceName);
             IdGenerator.initialize(nodeIdManager.fixNodeId(), globalIdConstraints, Collections.emptyMap());
-            log.debug("Started the service discovery manager");
+            log.debug("Started the service lifecycle listener");
         }
     }
+
+    private class ServiceDiscoveryManager implements Managed{
+
+        @Override
+        public void start() {
+            //Nothing to do here! All of it is done in the above lifecycle manager
+        }
+
+        @Override
+        public void stop() {
+            serviceDiscoveryClient.stop();
+            serviceProvider.stop();
+            curator.close();
+            IdGenerator.cleanUp();
+        }
+    }
+
 }

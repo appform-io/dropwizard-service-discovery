@@ -123,7 +123,7 @@ class ServiceDiscoveryBundleHierarchicalSelectorTest {
                 .build();
         bundle.initialize(bootstrap);
         bundle.run(new TestConfig(serviceDiscoveryConfiguration), environment);
-        bundle.getDiscoveryManager().serverStarted(server);
+        bundle.getServiceProviderListener().serverStarted(server);
         bundle.getServerStatus().markStarted();
         for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()) {
             lifeCycle.start();
