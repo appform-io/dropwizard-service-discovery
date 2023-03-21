@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [2.0.28-5]
+## [2.0.28-6]
 - Added a criteriaResolver and introduced a TransportType resolver as subType
 - Upgraded ranger version to 1.0-RC10
 
