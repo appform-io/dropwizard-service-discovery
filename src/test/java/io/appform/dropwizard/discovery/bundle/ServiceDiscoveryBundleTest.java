@@ -36,11 +36,15 @@ import io.dropwizard.setup.Environment;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.curator.test.TestingCluster;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.LocalConnector;
+import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodeAbsence;
@@ -59,6 +63,7 @@ class ServiceDiscoveryBundleTest {
     private final Environment environment = mock(Environment.class);
     private final Bootstrap<?> bootstrap = mock(Bootstrap.class);
     private final Configuration configuration = mock(Configuration.class);
+    private final Server server = mock(Server.class);
 
     static {
         val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
@@ -89,6 +94,12 @@ class ServiceDiscoveryBundleTest {
 
     @BeforeEach
     void setup() throws Exception {
+        val connector = mock(LocalConnector.class);
+        when(connector.getConnectionFactory(Mockito.anyString())).thenReturn(null);
+        Connector[] connectors = new Connector[1];
+        connectors[0] = connector;
+        when(server.getConnectors()).thenReturn(connectors);
+
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);
         when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
@@ -111,6 +122,7 @@ class ServiceDiscoveryBundleTest {
                                     .build();
         bundle.initialize(bootstrap);
         bundle.run(configuration, environment);
+        bundle.getDiscoveryManager().serverStarted(server);
         bundle.getServerStatus().markStarted();
         for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()){
             lifeCycle.start();
