@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [2.0.28-5]
+- Added a criteriaResolver and introduced a TransportType resolver as subType
+- Upgraded ranger version to 1.0-RC10
+
+## [2.0.28-5]
 - Removed region variable and added a node info resolver instead
 - Upgraded ranger version to 1.0-RC9
 

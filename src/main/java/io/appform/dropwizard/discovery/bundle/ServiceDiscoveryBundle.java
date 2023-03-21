@@ -31,8 +31,9 @@ import io.appform.dropwizard.discovery.bundle.id.NodeIdManager;
 import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstraint;
 import io.appform.dropwizard.discovery.bundle.monitors.DropwizardHealthMonitor;
 import io.appform.dropwizard.discovery.bundle.monitors.DropwizardServerStartupCheck;
-import io.appform.dropwizard.discovery.bundle.resolvers.NodeInfoResolver;
 import io.appform.dropwizard.discovery.bundle.resolvers.DefaultNodeInfoResolver;
+import io.appform.dropwizard.discovery.bundle.resolvers.NodeInfoResolver;
+import io.appform.dropwizard.discovery.bundle.resolvers.TransportTypeResolver;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.BIRTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.DropwizardServerStatus;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.OORTask;
@@ -51,9 +52,11 @@ import io.appform.ranger.core.model.ShardSelector;
 import io.appform.ranger.core.serviceprovider.ServiceProvider;
 import io.appform.ranger.zookeeper.ServiceProviderBuilders;
 import io.appform.ranger.zookeeper.serde.ZkNodeDataSerializer;
+import io.appform.ranger.zookeeper.serviceprovider.ZkServiceProviderBuilder;
 import io.dropwizard.Configuration;
 import io.dropwizard.ConfiguredBundle;
 import io.dropwizard.lifecycle.Managed;
+import io.dropwizard.lifecycle.ServerLifecycleListener;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import lombok.Getter;
@@ -70,6 +73,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import org.eclipse.jetty.server.Server;
 
 /**
  * A dropwizard bundle for service discovery.
@@ -84,6 +88,9 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     private ServiceProvider<ShardInfo, ZkNodeDataSerializer<ShardInfo>> serviceProvider;
 
     @Getter
+    @VisibleForTesting
+    private ServiceDiscoveryManager discoveryManager;
+    @Getter
     private CuratorFramework curator;
     @Getter
     private RangerClient<ShardInfo, MapBasedServiceRegistry<ShardInfo>> serviceDiscoveryClient;
@@ -93,6 +100,9 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     @Getter
     @VisibleForTesting
     private DropwizardServerStatus serverStatus;
+    @Getter
+    @VisibleForTesting
+    private TransportTypeResolver transportTypeResolver;
 
     protected ServiceDiscoveryBundle() {
         globalIdConstraints = Collections.emptyList();
@@ -122,29 +132,31 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
         val shardSelector = getShardSelector(configuration);
         rotationStatus = new RotationStatus(serviceDiscoveryConfiguration.isInitialRotationStatus());
         serverStatus = new DropwizardServerStatus(false);
+        transportTypeResolver = new TransportTypeResolver();
 
         curator = CuratorFrameworkFactory.builder()
                 .connectString(serviceDiscoveryConfiguration.getZookeeper())
                 .namespace(namespace)
                 .retryPolicy(new RetryForever(serviceDiscoveryConfiguration.getConnectionRetryIntervalMillis()))
                 .build();
-        serviceProvider = buildServiceProvider(
+        val serviceProviderBuilder = buildServiceProviderBuilder(
                 environment,
                 objectMapper,
                 namespace,
                 serviceName,
                 hostname,
-                port);
+                port
+        );
+        discoveryManager = new ServiceDiscoveryManager(serviceName, serviceProviderBuilder);
         serviceDiscoveryClient = buildDiscoveryClient(
                 environment,
                 namespace,
                 serviceName,
                 initialCriteria,
                 useInitialCriteria,
-                shardSelector);
-
-        environment.lifecycle()
-                .manage(new ServiceDiscoveryManager(serviceName));
+                shardSelector
+        );
+        environment.lifecycle().manage(discoveryManager);
         environment.jersey()
                 .register(new InfoResource(serviceDiscoveryClient));
         environment.admin()
@@ -239,7 +251,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .build();
     }
 
-    private ServiceProvider<ShardInfo, ZkNodeDataSerializer<ShardInfo>> buildServiceProvider(
+    private ZkServiceProviderBuilder<ShardInfo> buildServiceProviderBuilder(
             Environment environment,
             ObjectMapper objectMapper,
             String namespace,
@@ -247,7 +259,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
             String hostname,
             int port) {
         val nodeInfoResolver = createNodeInfoResolver();
-        val nodeInfo = nodeInfoResolver.node(serviceDiscoveryConfiguration);
+        val nodeInfo = nodeInfoResolver.resolve(serviceDiscoveryConfiguration);
         val initialDelayForMonitor = serviceDiscoveryConfiguration.getInitialDelaySeconds() > 1
                                      ? serviceDiscoveryConfiguration.getInitialDelaySeconds() - 1
                                      : 0;
@@ -256,7 +268,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                                    : serviceDiscoveryConfiguration.getDropwizardCheckInterval();
         val dwMonitoringStaleness
                 = Math.max(serviceDiscoveryConfiguration.getDropwizardCheckStaleness(), dwMonitoringInterval + 1);
-        val serviceProviderBuilder = ServiceProviderBuilders.<ShardInfo>shardedServiceProviderBuilder()
+        val providerBuilder = ServiceProviderBuilders.<ShardInfo>shardedServiceProviderBuilder()
                 .withCuratorFramework(curator)
                 .withNamespace(namespace)
                 .withServiceName(serviceName)
@@ -269,9 +281,9 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                     }
                     return null;
                 })
+                .withNodeData(nodeInfo)
                 .withHostname(hostname)
                 .withPort(port)
-                .withNodeData(nodeInfo)
                 .withHealthcheck(new InternalHealthChecker(healthchecks))
                 .withHealthcheck(new RotationCheck(rotationStatus))
                 .withHealthcheck(new InitialDelayChecker(serviceDiscoveryConfiguration.getInitialDelaySeconds()))
@@ -285,25 +297,24 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
 
         val healthMonitors = getHealthMonitors();
         if (healthMonitors != null && !healthMonitors.isEmpty()) {
-            healthMonitors.forEach(serviceProviderBuilder::withIsolatedHealthMonitor);
+            healthMonitors.forEach(providerBuilder::withIsolatedHealthMonitor);
         }
-        return serviceProviderBuilder.build();
+        return providerBuilder;
     }
 
-    private class ServiceDiscoveryManager implements Managed {
+    public class ServiceDiscoveryManager implements Managed, ServerLifecycleListener {
         private final String serviceName;
+        protected final ZkServiceProviderBuilder<ShardInfo> serviceProviderBuilder;
 
-        public ServiceDiscoveryManager(String serviceName) {
+        public ServiceDiscoveryManager(String serviceName,
+          ZkServiceProviderBuilder<ShardInfo> serviceProviderBuilder) {
             this.serviceName = serviceName;
+            this.serviceProviderBuilder = serviceProviderBuilder;
         }
 
         @Override
         public void start() {
-            curator.start();
-            serviceProvider.start();
-            serviceDiscoveryClient.start();
-            val nodeIdManager = new NodeIdManager(curator, serviceName);
-            IdGenerator.initialize(nodeIdManager.fixNodeId(), globalIdConstraints, Collections.emptyMap());
+            //Doing nothing here! Actions moved to server start!
         }
 
         @Override
@@ -312,6 +323,19 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
             serviceProvider.stop();
             curator.close();
             IdGenerator.cleanUp();
+        }
+
+        @Override
+        public void serverStarted(Server server) {
+            log.debug("Starting the service discovery manager");
+            serviceProviderBuilder.withTransportType(transportTypeResolver.resolve(server));
+            serviceProvider = serviceProviderBuilder.build();
+            curator.start();
+            serviceProvider.start();
+            serviceDiscoveryClient.start();
+            val nodeIdManager = new NodeIdManager(curator, serviceName);
+            IdGenerator.initialize(nodeIdManager.fixNodeId(), globalIdConstraints, Collections.emptyMap());
+            log.debug("Started the service discovery manager");
         }
     }
 }

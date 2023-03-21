@@ -17,7 +17,6 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Strings;
 import lombok.*;
 

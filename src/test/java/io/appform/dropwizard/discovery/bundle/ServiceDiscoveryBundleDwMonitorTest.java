@@ -23,6 +23,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
@@ -31,14 +32,30 @@ import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.setup.AdminEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.curator.test.TestingCluster;
+import org.eclipse.jetty.io.ByteBufferPool;
+import org.eclipse.jetty.io.EndPoint;
+import org.eclipse.jetty.server.ConnectionFactory;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.LocalConnector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.util.component.Container;
+import org.eclipse.jetty.util.component.Container.Listener;
 import org.eclipse.jetty.util.component.LifeCycle;
+import org.eclipse.jetty.util.thread.Scheduler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,6 +75,7 @@ class ServiceDiscoveryBundleDwMonitorTest {
     private final LifecycleEnvironment lifecycleEnvironment = new LifecycleEnvironment(metricRegistry);
     private final Environment environment = mock(Environment.class);
     private final Bootstrap<?> bootstrap = mock(Bootstrap.class);
+    private final Server server = mock(Server.class);
     private final Configuration configuration = mock(Configuration.class);
 
     static {
@@ -105,6 +123,12 @@ class ServiceDiscoveryBundleDwMonitorTest {
             }
         });
 
+        val connector = mock(LocalConnector.class);
+        when(connector.getConnectionFactory(Mockito.anyString())).thenReturn(null);
+        Connector[] connectors = new Connector[1];
+        connectors[0] = connector;
+        when(server.getConnectors()).thenReturn(connectors);
+
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);
         when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
@@ -129,6 +153,7 @@ class ServiceDiscoveryBundleDwMonitorTest {
                                                                      .build();
         bundle.initialize(bootstrap);
         bundle.run(configuration, environment);
+        bundle.getDiscoveryManager().serverStarted(server);
         bundle.getServerStatus().markStarted();
         for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()){
             lifeCycle.start();
