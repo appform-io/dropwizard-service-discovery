@@ -93,7 +93,7 @@ class ServiceDiscoveryBundleRotationTest {
     void setup() throws Exception {
         val connector = mock(LocalConnector.class);
         when(connector.getConnectionFactory(Mockito.anyString())).thenReturn(null);
-        Connector[] connectors = new Connector[1];
+        val connectors = new Connector[1];
         connectors[0] = connector;
         when(server.getConnectors()).thenReturn(connectors);
 
@@ -148,7 +148,7 @@ class ServiceDiscoveryBundleRotationTest {
         Assertions.assertEquals("TestHost", info.getHost());
         Assertions.assertEquals(8021, info.getPort());
 
-        OORTask oorTask = new OORTask(rotationStatus);
+        val oorTask = new OORTask(rotationStatus);
         oorTask.execute(Collections.emptyMap(), null);
 
 

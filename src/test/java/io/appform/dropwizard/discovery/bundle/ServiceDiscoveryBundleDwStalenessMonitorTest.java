@@ -112,7 +112,7 @@ class ServiceDiscoveryBundleDwStalenessMonitorTest {
 
         val connector = mock(LocalConnector.class);
         when(connector.getConnectionFactory(Mockito.anyString())).thenReturn(null);
-        Connector[] connectors = new Connector[1];
+        val connectors = new Connector[1];
         connectors[0] = connector;
         when(server.getConnectors()).thenReturn(connectors);
 

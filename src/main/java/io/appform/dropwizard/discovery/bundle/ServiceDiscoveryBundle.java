@@ -33,7 +33,7 @@ import io.appform.dropwizard.discovery.bundle.monitors.DropwizardHealthMonitor;
 import io.appform.dropwizard.discovery.bundle.monitors.DropwizardServerStartupCheck;
 import io.appform.dropwizard.discovery.bundle.resolvers.DefaultNodeInfoResolver;
 import io.appform.dropwizard.discovery.bundle.resolvers.NodeInfoResolver;
-import io.appform.dropwizard.discovery.bundle.resolvers.TransportTypeResolver;
+import io.appform.dropwizard.discovery.bundle.resolvers.PortSchemeResolver;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.BIRTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.DropwizardServerStatus;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.OORTask;
@@ -102,7 +102,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     private DropwizardServerStatus serverStatus;
     @Getter
     @VisibleForTesting
-    private TransportTypeResolver transportTypeResolver;
+    private PortSchemeResolver portSchemeResolver;
 
     protected ServiceDiscoveryBundle() {
         globalIdConstraints = Collections.emptyList();
@@ -132,7 +132,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
         val shardSelector = getShardSelector(configuration);
         rotationStatus = new RotationStatus(serviceDiscoveryConfiguration.isInitialRotationStatus());
         serverStatus = new DropwizardServerStatus(false);
-        transportTypeResolver = new TransportTypeResolver();
+        portSchemeResolver = new PortSchemeResolver();
 
         curator = CuratorFrameworkFactory.builder()
                 .connectString(serviceDiscoveryConfiguration.getZookeeper())
@@ -156,13 +156,27 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 useInitialCriteria,
                 shardSelector
         );
-        environment.lifecycle().manage(discoveryManager);
+        environment.lifecycle().addServerLifecycleListener(discoveryManager);
         environment.jersey()
                 .register(new InfoResource(serviceDiscoveryClient));
         environment.admin()
                 .addTask(new OORTask(rotationStatus));
         environment.admin()
                 .addTask(new BIRTask(rotationStatus));
+        environment.lifecycle().manage(new Managed() {
+            @Override
+            public void start() {
+                //Nothing to do here. Everything is done in the serverLifeCycleManager
+            }
+
+            @Override
+            public void stop() {
+                serviceDiscoveryClient.stop();
+                serviceProvider.stop();
+                curator.close();
+                IdGenerator.cleanUp();
+            }
+        });
     }
 
     protected ShardSelector<ShardInfo, MapBasedServiceRegistry<ShardInfo>> getShardSelector(T configuration) {
@@ -302,7 +316,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
         return providerBuilder;
     }
 
-    public class ServiceDiscoveryManager implements Managed, ServerLifecycleListener {
+    public class ServiceDiscoveryManager implements ServerLifecycleListener {
         private final String serviceName;
         protected final ZkServiceProviderBuilder<ShardInfo> serviceProviderBuilder;
 
@@ -313,22 +327,9 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
         }
 
         @Override
-        public void start() {
-            //Doing nothing here! Actions moved to server start!
-        }
-
-        @Override
-        public void stop() {
-            serviceDiscoveryClient.stop();
-            serviceProvider.stop();
-            curator.close();
-            IdGenerator.cleanUp();
-        }
-
-        @Override
         public void serverStarted(Server server) {
             log.debug("Starting the service discovery manager");
-            serviceProviderBuilder.withTransportType(transportTypeResolver.resolve(server));
+            serviceProviderBuilder.withPortScheme(portSchemeResolver.resolve(server));
             serviceProvider = serviceProviderBuilder.build();
             curator.start();
             serviceProvider.start();
