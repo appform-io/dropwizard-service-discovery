@@ -1,16 +1,13 @@
 package io.appform.dropwizard.discovery.bundle.resolvers;
 
-import io.appform.dropwizard.discovery.bundle.ServiceDiscoveryBundle;
-import io.appform.ranger.common.server.ShardInfo;
-
 /**
  * CriteriaResolver.java
- * Interface to help build a node to be saved in the discovery backend while building the serviceProvider.
- * To define your custom nodeData {@link ShardInfo}, please define your own implementation, during the bundle {@link ServiceDiscoveryBundle} init.
+ * Interface to help resolve from an argument A to the typed object T.
+ * Keeping this as the qualified class instead of using Function so that in the future if all criteria resolvers were to be fetched to register using reflections et. al, there is a qualified naming.
  */
 @FunctionalInterface
 public interface CriteriaResolver<T, A> {
 
-  T resolve(A args);
+    T resolve(A args);
 
 }

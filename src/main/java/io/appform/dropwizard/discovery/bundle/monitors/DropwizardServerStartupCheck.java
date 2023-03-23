@@ -31,13 +31,8 @@ public class DropwizardServerStartupCheck implements Healthcheck {
 
     private final DropwizardServerStatus serverStatus;
 
-    public DropwizardServerStartupCheck(Environment environment,
-                                        DropwizardServerStatus serverStatus) {
+    public DropwizardServerStartupCheck(DropwizardServerStatus serverStatus) {
         this.serverStatus = serverStatus;
-        environment.lifecycle().addServerLifecycleListener(server -> {
-            log.info("Dropwizard server started. Marking healthcheck as healthy");
-            serverStatus.markStarted();
-        });
     }
 
     @Override

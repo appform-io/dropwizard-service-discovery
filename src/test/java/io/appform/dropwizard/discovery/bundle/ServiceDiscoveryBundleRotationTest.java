@@ -29,16 +29,13 @@ import ch.qos.logback.classic.Logger;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.BIRTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.OORTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.RotationStatus;
 import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
-import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
-import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.setup.AdminEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -46,11 +43,14 @@ import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.curator.test.TestingCluster;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.util.component.LifeCycle;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.slf4j.LoggerFactory;
 
 
@@ -64,8 +64,7 @@ class ServiceDiscoveryBundleRotationTest {
     private final Environment environment = mock(Environment.class);
     private final Bootstrap<?> bootstrap = mock(Bootstrap.class);
     private final Configuration configuration = mock(Configuration.class);
-    private final DefaultServerFactory serverFactory = mock(DefaultServerFactory.class);
-    private final HttpConnectorFactory connectorFactory  = mock(HttpConnectorFactory.class);
+    private final Server server = mock(Server.class);
 
     static {
         val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
@@ -92,8 +91,9 @@ class ServiceDiscoveryBundleRotationTest {
 
     @BeforeEach
     void setup() throws Exception {
-        when(serverFactory.getApplicationConnectors()).thenReturn(Lists.newArrayList(connectorFactory));
-        when(configuration.getServerFactory()).thenReturn(serverFactory);
+        val connector = mock(ServerConnector.class);
+        when(connector.getConnectionFactory(Mockito.anyString())).thenReturn(null);
+        when(server.getConnectors()).thenReturn(new ServerConnector[] { connector });
 
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);
@@ -118,7 +118,7 @@ class ServiceDiscoveryBundleRotationTest {
         bundle.initialize(bootstrap);
         bundle.run(configuration, environment);
         rotationStatus = bundle.getRotationStatus();
-        bundle.getServerStatus().markStarted();
+        bundle.getServerLifecycleListener().serverStarted(server);
         for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()){
             lifeCycle.start();
         }

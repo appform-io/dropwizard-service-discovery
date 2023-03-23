@@ -1,7 +1,12 @@
 package io.appform.dropwizard.discovery.bundle.resolvers;
 
-import io.dropwizard.server.ServerFactory;
+import org.eclipse.jetty.server.Server;
 
-public interface PortSchemeResolver extends CriteriaResolver<String, ServerFactory> {
+/**
+ * NodeInfoResolver.java
+ * Interface to help build a portScheme basis the server {@link Server}
+ */
+@FunctionalInterface
+public interface PortSchemeResolver extends CriteriaResolver<String, Server> {
 
 }
