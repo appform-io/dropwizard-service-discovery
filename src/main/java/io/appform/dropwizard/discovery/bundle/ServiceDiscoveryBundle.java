@@ -144,15 +144,6 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 useInitialCriteria,
                 shardSelector
         );
-        /*
-            Writing this inside the lambda scope, because creating another class will mean having to pass, environment, objectMapper and rest of the
-            args to it, including curator and serviceDiscoveryClient, just un-necessary bloat up!
-            Extracting into a different class, would mean we'll have to end up passing pretty much every arg in the bundle. That's too verbose.
-            For testing : bundle.run doesn't necessarily invoke this, this is a callback on server start. Creating a variable for easy testing.
-            As good as moving this to a new class, without all the hassle of moving the entire args from the bundle there!
-
-            Also moving the server start check here, to avoid redundant lifecycleListeners.
-         */
         serverLifecycleListener = server -> {
             log.info("Starting the service provider, since the server has started here");
             serviceProvider = buildServiceProvider(
