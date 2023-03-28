@@ -318,7 +318,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
     @AllArgsConstructor
-    private class ServiceDiscoveryManager implements Managed{
+    private class ServiceDiscoveryManager implements Managed {
 
         private final String serviceName;
 

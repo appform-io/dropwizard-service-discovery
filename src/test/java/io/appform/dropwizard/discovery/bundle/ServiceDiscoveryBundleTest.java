@@ -98,7 +98,6 @@ class ServiceDiscoveryBundleTest {
         val connector = mock(ServerConnector.class);
         when(connector.getConnectionFactory(Mockito.anyString())).thenReturn(null);
         when(server.getConnectors()).thenReturn(new ServerConnector[] { connector });
-
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);
         when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
