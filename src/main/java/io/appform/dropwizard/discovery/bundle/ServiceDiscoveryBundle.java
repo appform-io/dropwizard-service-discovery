@@ -56,7 +56,6 @@ import io.appform.ranger.zookeeper.serde.ZkNodeDataSerializer;
 import io.dropwizard.Configuration;
 import io.dropwizard.ConfiguredBundle;
 import io.dropwizard.lifecycle.Managed;
-import io.dropwizard.lifecycle.ServerLifecycleListener;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import java.io.IOException;
@@ -96,9 +95,6 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     @Getter
     @VisibleForTesting
     private DropwizardServerStatus serverStatus;
-    @Getter
-    @VisibleForTesting
-    private ServerLifecycleListener serverLifecycleListener;
 
     protected ServiceDiscoveryBundle() {
         globalIdConstraints = Collections.emptyList();
@@ -119,7 +115,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     public void run(T configuration, Environment environment) throws Exception {
         val portSchemeResolver = createPortSchemeResolver();
         Preconditions.checkNotNull(portSchemeResolver, "Port scheme resolver can't be null");
-
+        val portScheme = portSchemeResolver.resolve(configuration);
         serviceDiscoveryConfiguration = getRangerConfiguration(configuration);
         val objectMapper = environment.getObjectMapper();
         val namespace = serviceDiscoveryConfiguration.getNamespace();
@@ -136,34 +132,21 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .namespace(namespace)
                 .retryPolicy(new RetryForever(serviceDiscoveryConfiguration.getConnectionRetryIntervalMillis()))
                 .build();
+        serviceProvider = buildServiceProvider(
+          environment,
+          objectMapper,
+          namespace,
+          serviceName,
+          hostname,
+          port,
+          portScheme);
         serviceDiscoveryClient = buildDiscoveryClient(
                 environment,
                 namespace,
                 serviceName,
                 initialCriteria,
                 useInitialCriteria,
-                shardSelector
-        );
-        serverLifecycleListener = server -> {
-            log.info("Starting the service provider, since the server has started here");
-            serviceProvider = buildServiceProvider(
-              environment,
-              objectMapper,
-              namespace,
-              serviceName,
-              hostname,
-              port,
-              portSchemeResolver.resolve(server)
-            );
-            curator.start();
-            serviceProvider.start();
-            serviceDiscoveryClient.start();
-            val nodeIdManager = new NodeIdManager(curator, serviceName);
-            IdGenerator.initialize(nodeIdManager.fixNodeId(), globalIdConstraints, Collections.emptyMap());
-            serverStatus.markStarted();
-            log.info("Service Provider has been successfully started. Server status marked as healthy");
-        };
-        environment.lifecycle().addServerLifecycleListener(serverLifecycleListener);
+                shardSelector);
         environment.lifecycle().manage(new ServiceDiscoveryManager(serviceName));
         environment.jersey()
                 .register(new InfoResource(serviceDiscoveryClient));
@@ -171,7 +154,6 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .addTask(new OORTask(rotationStatus));
         environment.admin()
                 .addTask(new BIRTask(rotationStatus));
-
     }
 
     protected ShardSelector<ShardInfo, MapBasedServiceRegistry<ShardInfo>> getShardSelector(T configuration) {
@@ -186,8 +168,8 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
         return new DefaultNodeInfoResolver();
     }
 
-    protected PortSchemeResolver createPortSchemeResolver(){
-        return new DefaultPortSchemeResolver();
+    protected PortSchemeResolver<T> createPortSchemeResolver(){
+        return new DefaultPortSchemeResolver<>();
     }
 
     /**
@@ -302,7 +284,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .withHealthcheck(new InternalHealthChecker(healthchecks))
                 .withHealthcheck(new RotationCheck(rotationStatus))
                 .withHealthcheck(new InitialDelayChecker(serviceDiscoveryConfiguration.getInitialDelaySeconds()))
-                .withHealthcheck(new DropwizardServerStartupCheck(serverStatus))
+                .withHealthcheck(new DropwizardServerStartupCheck(environment, serverStatus))
                 .withIsolatedHealthMonitor(
                         new DropwizardHealthMonitor(
                                 new TimeEntity(initialDelayForMonitor, dwMonitoringInterval, TimeUnit.SECONDS),
@@ -324,7 +306,13 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
 
         @Override
         public void start() {
-            //Nothing to do here. Everything is done in the lifecycle manager above!
+            log.debug("Starting the discovery manager");
+            curator.start();
+            serviceProvider.start();
+            serviceDiscoveryClient.start();
+            val nodeIdManager = new NodeIdManager(curator, serviceName);
+            IdGenerator.initialize(nodeIdManager.fixNodeId(), globalIdConstraints, Collections.emptyMap());
+            log.debug("Discovery manager has been successfully started. Server status marked as healthy");
         }
 
         @Override
