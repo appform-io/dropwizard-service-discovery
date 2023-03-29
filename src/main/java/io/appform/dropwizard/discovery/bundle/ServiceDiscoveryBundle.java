@@ -312,7 +312,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
             serviceDiscoveryClient.start();
             val nodeIdManager = new NodeIdManager(curator, serviceName);
             IdGenerator.initialize(nodeIdManager.fixNodeId(), globalIdConstraints, Collections.emptyMap());
-            log.debug("Discovery manager has been successfully started. Server status marked as healthy");
+            log.debug("Discovery manager has been successfully started.");
         }
 
         @Override
