@@ -133,13 +133,13 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .retryPolicy(new RetryForever(serviceDiscoveryConfiguration.getConnectionRetryIntervalMillis()))
                 .build();
         serviceProvider = buildServiceProvider(
-          environment,
-          objectMapper,
-          namespace,
-          serviceName,
-          hostname,
-          port,
-          portScheme);
+                environment,
+                objectMapper,
+                namespace,
+                serviceName,
+                hostname,
+                port,
+                portScheme);
         serviceDiscoveryClient = buildDiscoveryClient(
                 environment,
                 namespace,
