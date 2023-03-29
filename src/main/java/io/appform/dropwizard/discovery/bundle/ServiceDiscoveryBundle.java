@@ -164,22 +164,22 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
 
     protected abstract String getServiceName(T configuration);
 
-    protected NodeInfoResolver createNodeInfoResolver(){
+    protected NodeInfoResolver createNodeInfoResolver() {
         return new DefaultNodeInfoResolver();
     }
 
-    protected PortSchemeResolver<T> createPortSchemeResolver(){
+    protected PortSchemeResolver<T> createPortSchemeResolver() {
         return new DefaultPortSchemeResolver<>();
     }
 
     /**
         Override the following if you require.
      **/
-    protected Predicate<ShardInfo> getInitialCriteria(T configuration){
+    protected Predicate<ShardInfo> getInitialCriteria(T configuration) {
         return shardInfo -> true;
     }
 
-    protected boolean alwaysMergeWithInitialCriteria(T configuration){
+    protected boolean alwaysMergeWithInitialCriteria(T configuration) {
         return false;
     }
 
