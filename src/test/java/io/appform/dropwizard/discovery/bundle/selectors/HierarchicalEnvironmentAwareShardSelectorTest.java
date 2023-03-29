@@ -62,7 +62,7 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
                                   ShardInfo.builder().environment("x.y").build(),
                                   HealthcheckStatus.healthy,
                                   System.currentTimeMillis(),
-                       "http"));
+                                 "http"));
 
         serviceNodes.put(
                 ShardInfo.builder().environment("x").build(),
@@ -71,7 +71,7 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
                                   ShardInfo.builder().environment("x.y").build(),
                                   HealthcheckStatus.healthy,
                                   System.currentTimeMillis(),
-                        "http"));
+                                 "http"));
 
         doReturn(serviceNodes).when(serviceRegistry).nodes();
 
@@ -94,7 +94,7 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
                                   ShardInfo.builder().environment("x.y").build(),
                                   HealthcheckStatus.healthy,
                                   System.currentTimeMillis(),
-                       "http"));
+                                 "http"));
         serviceNodes.put(
                 ShardInfo.builder().environment("x").build(),
                 new ServiceNode<>("host2",
@@ -102,7 +102,7 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
                                   ShardInfo.builder().environment("x").build(),
                                   HealthcheckStatus.healthy,
                                   System.currentTimeMillis(),
-                       "http"));
+                                 "http"));
         doReturn(serviceNodes).when(serviceRegistry).nodes();
 
         val nodes = selector("x.y")
@@ -131,7 +131,7 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
                                   ShardInfo.builder().environment("x.y").build(),
                                   HealthcheckStatus.healthy,
                                   System.currentTimeMillis(),
-                       "http"));
+                                 "http"));
         serviceNodes.put(
                 ShardInfo.builder().environment("x").build(),
                 new ServiceNode<>("host2",
@@ -139,7 +139,7 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
                                   ShardInfo.builder().environment("x").build(),
                                   HealthcheckStatus.healthy,
                                   System.currentTimeMillis(),
-                       "http"));
+                                 "http"));
         doReturn(serviceNodes).when(serviceRegistry).nodes();
 
         val nodes = selector("x.y").nodes(null, serviceRegistry);
