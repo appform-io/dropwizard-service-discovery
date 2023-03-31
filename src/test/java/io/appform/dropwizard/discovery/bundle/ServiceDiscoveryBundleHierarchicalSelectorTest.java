@@ -56,6 +56,11 @@ import org.slf4j.LoggerFactory;
 @Slf4j
 class ServiceDiscoveryBundleHierarchicalSelectorTest {
 
+    static {
+        val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        root.setLevel(Level.INFO);
+    }
+
     private final HealthCheckRegistry healthChecks = mock(HealthCheckRegistry.class);
     private final JerseyEnvironment jerseyEnvironment = mock(JerseyEnvironment.class);
     private final MetricRegistry metricRegistry = mock(MetricRegistry.class);
@@ -65,22 +70,8 @@ class ServiceDiscoveryBundleHierarchicalSelectorTest {
     private final Configuration configuration = mock(Configuration.class);
     private final DefaultServerFactory serverFactory = mock(DefaultServerFactory.class);
     private final ConnectorFactory connectorFactory = mock(HttpConnectorFactory.class);
-
-    static {
-        val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        root.setLevel(Level.INFO);
-    }
-
-    private static final class TestConfig extends Configuration {
-        @Getter
-        private final ServiceDiscoveryConfiguration configuration;
-
-        private TestConfig(ServiceDiscoveryConfiguration configuration) {
-            this.configuration = configuration;
-        }
-
-    }
-
+    private final TestingCluster testingCluster = new TestingCluster(1);
+    private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
     private final ServiceDiscoveryBundle<TestConfig> bundle = new ServiceDiscoveryBundle<TestConfig>() {
         @Override
         protected ServiceDiscoveryConfiguration getRangerConfiguration(TestConfig configuration) {
@@ -92,15 +83,11 @@ class ServiceDiscoveryBundleHierarchicalSelectorTest {
             return "TestService";
         }
     };
-
-    private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
-    private final TestingCluster testingCluster = new TestingCluster(1);
     private HealthcheckStatus status = HealthcheckStatus.healthy;
 
     @BeforeEach
     void setup() throws Exception {
-        when(serverFactory.getApplicationConnectors()).thenReturn(
-          Lists.newArrayList(connectorFactory));
+        when(serverFactory.getApplicationConnectors()).thenReturn(Lists.newArrayList(connectorFactory));
         when(configuration.getServerFactory()).thenReturn(serverFactory);
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);
@@ -108,7 +95,8 @@ class ServiceDiscoveryBundleHierarchicalSelectorTest {
         when(environment.healthChecks()).thenReturn(healthChecks);
         when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
         AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
-        doNothing().when(adminEnvironment).addTask(any());
+        doNothing().when(adminEnvironment)
+                .addTask(any());
         when(environment.admin()).thenReturn(adminEnvironment);
 
         testingCluster.start();
@@ -126,7 +114,8 @@ class ServiceDiscoveryBundleHierarchicalSelectorTest {
         testConfig.setServerFactory(serverFactory);
         bundle.initialize(bootstrap);
         bundle.run(testConfig, environment);
-        bundle.getServerStatus().markStarted();
+        bundle.getServerStatus()
+                .markStarted();
         for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()) {
             lifeCycle.start();
         }
@@ -149,12 +138,24 @@ class ServiceDiscoveryBundleHierarchicalSelectorTest {
                 .orElse(null);
         Assertions.assertNotNull(info);
         Assertions.assertNotNull(info.getNodeData());
-        Assertions.assertEquals("x.y", info.getNodeData().getEnvironment());
+        Assertions.assertEquals("x.y", info.getNodeData()
+                .getEnvironment());
         Assertions.assertEquals("TestHost", info.getHost());
         Assertions.assertEquals(8021, info.getPort());
 
         status = HealthcheckStatus.unhealthy;
 
         assertNodeAbsence(bundle);
+    }
+
+    private static final class TestConfig extends Configuration {
+
+        @Getter
+        private final ServiceDiscoveryConfiguration configuration;
+
+        private TestConfig(ServiceDiscoveryConfiguration configuration) {
+            this.configuration = configuration;
+        }
+
     }
 }

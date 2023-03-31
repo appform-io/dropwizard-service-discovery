@@ -15,12 +15,12 @@ public class DefaultNodeInfoResolver implements NodeInfoResolver {
 
     @Override
     public ShardInfo resolve(ServiceDiscoveryConfiguration configuration) {
-      val region = System.getenv(FARM_ID);
-      log.debug("The region received from the env variable FARM_ID is {}. Setting the same in nodeInfo", region);
-      return ShardInfo.builder()
-        .environment(configuration.getEnvironment())
-        .region(region)
-        .tags(configuration.getTags())
-        .build();
+        val region = System.getenv(FARM_ID);
+        log.debug("The region received from the env variable FARM_ID is {}. Setting the same in nodeInfo", region);
+        return ShardInfo.builder()
+                .environment(configuration.getEnvironment())
+                .region(region)
+                .tags(configuration.getTags())
+                .build();
     }
 }

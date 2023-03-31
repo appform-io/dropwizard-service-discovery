@@ -112,7 +112,8 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
     @Override
-    public void run(T configuration, Environment environment) throws Exception {
+    public void run(T configuration,
+                    Environment environment) throws Exception {
         val portSchemeResolver = createPortSchemeResolver();
         Preconditions.checkNotNull(portSchemeResolver, "Port scheme resolver can't be null");
         val portScheme = portSchemeResolver.resolve(configuration);
@@ -132,22 +133,12 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .namespace(namespace)
                 .retryPolicy(new RetryForever(serviceDiscoveryConfiguration.getConnectionRetryIntervalMillis()))
                 .build();
-        serviceProvider = buildServiceProvider(
-                environment,
-                objectMapper,
-                namespace,
-                serviceName,
-                hostname,
-                port,
+        serviceProvider = buildServiceProvider(environment, objectMapper, namespace, serviceName, hostname, port,
                 portScheme);
-        serviceDiscoveryClient = buildDiscoveryClient(
-                environment,
-                namespace,
-                serviceName,
-                initialCriteria,
-                useInitialCriteria,
-                shardSelector);
-        environment.lifecycle().manage(new ServiceDiscoveryManager(serviceName));
+        serviceDiscoveryClient = buildDiscoveryClient(environment, namespace, serviceName, initialCriteria,
+                useInitialCriteria, shardSelector);
+        environment.lifecycle()
+                .manage(new ServiceDiscoveryManager(serviceName));
         environment.jersey()
                 .register(new InfoResource(serviceDiscoveryClient));
         environment.admin()
@@ -173,7 +164,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
     /**
-        Override the following if you require.
+     * Override the following if you require.
      **/
     protected Predicate<ShardInfo> getInitialCriteria(T configuration) {
         return shardInfo -> true;
@@ -189,11 +180,10 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
 
     @SuppressWarnings("unused")
     protected int getPort(T configuration) {
-        Preconditions.checkArgument(
-                Constants.DEFAULT_PORT != serviceDiscoveryConfiguration.getPublishedPort()
+        Preconditions.checkArgument(Constants.DEFAULT_PORT != serviceDiscoveryConfiguration.getPublishedPort()
                         && 0 != serviceDiscoveryConfiguration.getPublishedPort(),
-                "Looks like publishedPost has not been set and getPort() has not been overridden. This is wrong. \n" +
-                        "Either set publishedPort in config or override getPort() to return the port on which the service is running");
+                "Looks like publishedPost has not been set and getPort() has not been overridden. This is wrong. \n"
+                        + "Either set publishedPort in config or override getPort() to return the port on which the service is running");
         return serviceDiscoveryConfiguration.getPublishedPort();
     }
 
@@ -215,13 +205,12 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
 
-    private RangerClient<ShardInfo, MapBasedServiceRegistry<ShardInfo>> buildDiscoveryClient(
-            Environment environment,
-            String namespace,
-            String serviceName,
-            Predicate<ShardInfo> initialCriteria,
-            boolean mergeWithInitialCriteria,
-            ShardSelector<ShardInfo, MapBasedServiceRegistry<ShardInfo>> shardSelector) {
+    private RangerClient<ShardInfo, MapBasedServiceRegistry<ShardInfo>> buildDiscoveryClient(Environment environment,
+                                                                                             String namespace,
+                                                                                             String serviceName,
+                                                                                             Predicate<ShardInfo> initialCriteria,
+                                                                                             boolean mergeWithInitialCriteria,
+                                                                                             ShardSelector<ShardInfo, MapBasedServiceRegistry<ShardInfo>> shardSelector) {
         return SimpleRangerZKClient.<ShardInfo>builder()
                 .curatorFramework(curator)
                 .namespace(namespace)
@@ -229,31 +218,29 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .mapper(environment.getObjectMapper())
                 .nodeRefreshIntervalMs(serviceDiscoveryConfiguration.getRefreshTimeMs())
                 .disableWatchers(serviceDiscoveryConfiguration.isDisableWatchers())
-                .deserializer(
-                        data -> {
-                            try {
-                                return environment.getObjectMapper().readValue(data, new TypeReference<ServiceNode<ShardInfo>>() {
+                .deserializer(data -> {
+                    try {
+                        return environment.getObjectMapper()
+                                .readValue(data, new TypeReference<ServiceNode<ShardInfo>>() {
                                 });
-                            } catch (IOException e) {
-                                log.warn("Error parsing node data with value {}", new String(data));
-                            }
-                            return null;
-                        }
-                )
+                    } catch (IOException e) {
+                        log.warn("Error parsing node data with value {}", new String(data));
+                    }
+                    return null;
+                })
                 .initialCriteria(initialCriteria)
                 .alwaysUseInitialCriteria(mergeWithInitialCriteria)
                 .shardSelector(shardSelector)
                 .build();
     }
 
-    private ServiceProvider<ShardInfo, ZkNodeDataSerializer<ShardInfo>> buildServiceProvider(
-            Environment environment,
-            ObjectMapper objectMapper,
-            String namespace,
-            String serviceName,
-            String hostname,
-            int port,
-            String portScheme) {
+    private ServiceProvider<ShardInfo, ZkNodeDataSerializer<ShardInfo>> buildServiceProvider(Environment environment,
+                                                                                             ObjectMapper objectMapper,
+                                                                                             String namespace,
+                                                                                             String serviceName,
+                                                                                             String hostname,
+                                                                                             int port,
+                                                                                             String portScheme) {
         val nodeInfoResolver = createNodeInfoResolver();
         val nodeInfo = nodeInfoResolver.resolve(serviceDiscoveryConfiguration);
         val initialDelayForMonitor = serviceDiscoveryConfiguration.getInitialDelaySeconds() > 1
@@ -262,8 +249,8 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
         val dwMonitoringInterval = serviceDiscoveryConfiguration.getDropwizardCheckInterval() == 0
                                    ? Constants.DEFAULT_DW_CHECK_INTERVAL
                                    : serviceDiscoveryConfiguration.getDropwizardCheckInterval();
-        val dwMonitoringStaleness
-                = Math.max(serviceDiscoveryConfiguration.getDropwizardCheckStaleness(), dwMonitoringInterval + 1);
+        val dwMonitoringStaleness = Math.max(serviceDiscoveryConfiguration.getDropwizardCheckStaleness(),
+                dwMonitoringInterval + 1);
         val serviceProviderBuilder = ServiceProviderBuilders.<ShardInfo>shardedServiceProviderBuilder()
                 .withCuratorFramework(curator)
                 .withNamespace(namespace)
@@ -271,8 +258,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .withSerializer(data -> {
                     try {
                         return objectMapper.writeValueAsBytes(data);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         log.warn("Could not parse node data", e);
                     }
                     return null;
@@ -285,10 +271,9 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .withHealthcheck(new RotationCheck(rotationStatus))
                 .withHealthcheck(new InitialDelayChecker(serviceDiscoveryConfiguration.getInitialDelaySeconds()))
                 .withHealthcheck(new DropwizardServerStartupCheck(environment, serverStatus))
-                .withIsolatedHealthMonitor(
-                        new DropwizardHealthMonitor(
-                                new TimeEntity(initialDelayForMonitor, dwMonitoringInterval, TimeUnit.SECONDS),
-                                dwMonitoringStaleness * 1_000L, environment))
+                .withIsolatedHealthMonitor(new DropwizardHealthMonitor(
+                        new TimeEntity(initialDelayForMonitor, dwMonitoringInterval, TimeUnit.SECONDS),
+                        dwMonitoringStaleness * 1_000L, environment))
                 .withHealthUpdateIntervalMs(serviceDiscoveryConfiguration.getRefreshTimeMs())
                 .withStaleUpdateThresholdMs(10000);
 

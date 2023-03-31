@@ -58,6 +58,11 @@ import org.slf4j.LoggerFactory;
 @Slf4j
 class ServiceDiscoveryBundleRotationTest {
 
+    static {
+        val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        root.setLevel(Level.INFO);
+    }
+
     private final HealthCheckRegistry healthChecks = mock(HealthCheckRegistry.class);
     private final JerseyEnvironment jerseyEnvironment = mock(JerseyEnvironment.class);
     private final MetricRegistry metricRegistry = mock(MetricRegistry.class);
@@ -67,13 +72,8 @@ class ServiceDiscoveryBundleRotationTest {
     private final Configuration configuration = mock(Configuration.class);
     private final DefaultServerFactory serverFactory = mock(DefaultServerFactory.class);
     private final ConnectorFactory connectorFactory = mock(HttpConnectorFactory.class);
-
-    static {
-        val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        root.setLevel(Level.INFO);
-    }
-
-
+    private final TestingCluster testingCluster = new TestingCluster(1);
+    private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
     private final ServiceDiscoveryBundle<Configuration> bundle = new ServiceDiscoveryBundle<Configuration>() {
         @Override
         protected ServiceDiscoveryConfiguration getRangerConfiguration(Configuration configuration) {
@@ -86,15 +86,11 @@ class ServiceDiscoveryBundleRotationTest {
         }
 
     };
-
-    private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
-    private final TestingCluster testingCluster = new TestingCluster(1);
     private RotationStatus rotationStatus;
 
     @BeforeEach
     void setup() throws Exception {
-        when(serverFactory.getApplicationConnectors()).thenReturn(
-          Lists.newArrayList(connectorFactory));
+        when(serverFactory.getApplicationConnectors()).thenReturn(Lists.newArrayList(connectorFactory));
         when(configuration.getServerFactory()).thenReturn(serverFactory);
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);
@@ -102,32 +98,34 @@ class ServiceDiscoveryBundleRotationTest {
         when(environment.healthChecks()).thenReturn(healthChecks);
         when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
         AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
-        doNothing().when(adminEnvironment).addTask(any());
+        doNothing().when(adminEnvironment)
+                .addTask(any());
         when(environment.admin()).thenReturn(adminEnvironment);
 
         testingCluster.start();
 
         serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
-                                    .zookeeper(testingCluster.getConnectString())
-                                    .namespace("test")
-                                    .environment("testing")
-                                    .connectionRetryIntervalMillis(5000)
-                                    .publishedHost("TestHost")
-                                    .publishedPort(8021)
-                                    .initialRotationStatus(true)
-                                    .build();
+                .zookeeper(testingCluster.getConnectString())
+                .namespace("test")
+                .environment("testing")
+                .connectionRetryIntervalMillis(5000)
+                .publishedHost("TestHost")
+                .publishedPort(8021)
+                .initialRotationStatus(true)
+                .build();
         bundle.initialize(bootstrap);
         bundle.run(configuration, environment);
         rotationStatus = bundle.getRotationStatus();
-        bundle.getServerStatus().markStarted();
-        for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()){
+        bundle.getServerStatus()
+                .markStarted();
+        for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()) {
             lifeCycle.start();
         }
     }
 
     @AfterEach
     void tearDown() throws Exception {
-        for (LifeCycle lifeCycle: lifecycleEnvironment.getManagedObjects()){
+        for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()) {
             lifeCycle.stop();
         }
         testingCluster.stop();
@@ -142,19 +140,18 @@ class ServiceDiscoveryBundleRotationTest {
                 .orElse(null);
         Assertions.assertNotNull(info);
         Assertions.assertNotNull(info.getNodeData());
-        Assertions.assertEquals("testing", info.getNodeData().getEnvironment());
+        Assertions.assertEquals("testing", info.getNodeData()
+                .getEnvironment());
         Assertions.assertEquals("TestHost", info.getHost());
         Assertions.assertEquals(8021, info.getPort());
 
         val oorTask = new OORTask(rotationStatus);
         oorTask.execute(Collections.emptyMap(), null);
 
-
         assertNodeAbsence(bundle);
 
         BIRTask birTask = new BIRTask(rotationStatus);
         birTask.execute(Collections.emptyMap(), null);
-
 
         assertNodePresence(bundle);
     }

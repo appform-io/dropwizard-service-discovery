@@ -55,6 +55,11 @@ import org.slf4j.LoggerFactory;
 @Slf4j
 class ServiceDiscoveryBundleCustomHostPortTest {
 
+    static {
+        val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        root.setLevel(Level.INFO);
+    }
+
     private final HealthCheckRegistry healthChecks = mock(HealthCheckRegistry.class);
     private final JerseyEnvironment jerseyEnvironment = mock(JerseyEnvironment.class);
     private final MetricRegistry metricRegistry = mock(MetricRegistry.class);
@@ -64,13 +69,8 @@ class ServiceDiscoveryBundleCustomHostPortTest {
     private final Configuration configuration = mock(Configuration.class);
     private final DefaultServerFactory serverFactory = mock(DefaultServerFactory.class);
     private final ConnectorFactory connectorFactory = mock(HttpConnectorFactory.class);
-
-    static {
-        val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        root.setLevel(Level.INFO);
-    }
-
-
+    private final TestingCluster testingCluster = new TestingCluster(1);
+    private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
     private final ServiceDiscoveryBundle<Configuration> bundle = new ServiceDiscoveryBundle<Configuration>() {
         @Override
         protected ServiceDiscoveryConfiguration getRangerConfiguration(Configuration configuration) {
@@ -93,15 +93,11 @@ class ServiceDiscoveryBundleCustomHostPortTest {
         }
 
     };
-
-    private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
-    private final TestingCluster testingCluster = new TestingCluster(1);
     private HealthcheckStatus status = HealthcheckStatus.healthy;
 
     @BeforeEach
     void setup() throws Exception {
-        when(serverFactory.getApplicationConnectors()).thenReturn(
-          Lists.newArrayList(connectorFactory));
+        when(serverFactory.getApplicationConnectors()).thenReturn(Lists.newArrayList(connectorFactory));
         when(configuration.getServerFactory()).thenReturn(serverFactory);
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);
@@ -109,24 +105,26 @@ class ServiceDiscoveryBundleCustomHostPortTest {
         when(environment.healthChecks()).thenReturn(healthChecks);
         when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
         AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
-        doNothing().when(adminEnvironment).addTask(any());
+        doNothing().when(adminEnvironment)
+                .addTask(any());
         when(environment.admin()).thenReturn(adminEnvironment);
 
         testingCluster.start();
 
         serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
-                                    .zookeeper(testingCluster.getConnectString())
-                                    .namespace("test")
-                                    .environment("testing")
-                                    .connectionRetryIntervalMillis(5000)
-                                    .publishedHost("TestHost")
-                                    .publishedPort(8021)
-                                    .initialRotationStatus(true)
-                                    .build();
+                .zookeeper(testingCluster.getConnectString())
+                .namespace("test")
+                .environment("testing")
+                .connectionRetryIntervalMillis(5000)
+                .publishedHost("TestHost")
+                .publishedPort(8021)
+                .initialRotationStatus(true)
+                .build();
         bundle.initialize(bootstrap);
         bundle.run(configuration, environment);
-        bundle.getServerStatus().markStarted();
-        for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()){
+        bundle.getServerStatus()
+                .markStarted();
+        for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()) {
             lifeCycle.start();
         }
         bundle.registerHealthcheck(() -> status);
@@ -135,7 +133,7 @@ class ServiceDiscoveryBundleCustomHostPortTest {
 
     @AfterEach
     void tearDown() throws Exception {
-        for (LifeCycle lifeCycle: lifecycleEnvironment.getManagedObjects()){
+        for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()) {
             lifeCycle.stop();
         }
         testingCluster.stop();
@@ -150,7 +148,8 @@ class ServiceDiscoveryBundleCustomHostPortTest {
 
         Assertions.assertNotNull(info);
         Assertions.assertNotNull(info.getNodeData());
-        Assertions.assertEquals("testing", info.getNodeData().getEnvironment());
+        Assertions.assertEquals("testing", info.getNodeData()
+                .getEnvironment());
         Assertions.assertEquals("CustomHost", info.getHost());
         Assertions.assertEquals(21000, info.getPort());
         status = HealthcheckStatus.unhealthy;

@@ -57,6 +57,11 @@ import org.slf4j.LoggerFactory;
 @Slf4j
 class ServiceDiscoveryBundleDwStalenessMonitorTest {
 
+    static {
+        val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        root.setLevel(Level.INFO);
+    }
+
     private final HealthCheckRegistry healthChecks = new HealthCheckRegistry();
     private final JerseyEnvironment jerseyEnvironment = mock(JerseyEnvironment.class);
     private final MetricRegistry metricRegistry = mock(MetricRegistry.class);
@@ -66,12 +71,9 @@ class ServiceDiscoveryBundleDwStalenessMonitorTest {
     private final Configuration configuration = mock(Configuration.class);
     private final DefaultServerFactory serverFactory = mock(DefaultServerFactory.class);
     private final ConnectorFactory connectorFactory = mock(HttpConnectorFactory.class);
-
-    static {
-        val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        root.setLevel(Level.INFO);
-    }
-
+    private final TestingCluster testingCluster = new TestingCluster(1);
+    private final AtomicBoolean healthySucceeded = new AtomicBoolean(false);
+    private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
     private final ServiceDiscoveryBundle<Configuration> bundle = new ServiceDiscoveryBundle<Configuration>() {
         @Override
         protected ServiceDiscoveryConfiguration getRangerConfiguration(Configuration configuration) {
@@ -95,25 +97,20 @@ class ServiceDiscoveryBundleDwStalenessMonitorTest {
 
     };
 
-    private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
-    private final TestingCluster testingCluster = new TestingCluster(1);
-    private final AtomicBoolean healthySucceeded = new AtomicBoolean(false);
-
     @BeforeEach
     void setup() throws Exception {
         healthChecks.register("healthy-once-but-then-sleep5", new HealthCheck() {
 
             @Override
             protected Result check() {
-                if(healthySucceeded.get()) {
+                if (healthySucceeded.get()) {
                     return Result.unhealthy("Forced unhealthy as healthy check has succeded");
                 }
                 return Result.healthy();
             }
         });
 
-        when(serverFactory.getApplicationConnectors()).thenReturn(
-          Lists.newArrayList(connectorFactory));
+        when(serverFactory.getApplicationConnectors()).thenReturn(Lists.newArrayList(connectorFactory));
         when(configuration.getServerFactory()).thenReturn(serverFactory);
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);
@@ -121,7 +118,8 @@ class ServiceDiscoveryBundleDwStalenessMonitorTest {
         when(environment.healthChecks()).thenReturn(healthChecks);
         when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
         AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
-        doNothing().when(adminEnvironment).addTask(any());
+        doNothing().when(adminEnvironment)
+                .addTask(any());
         when(environment.admin()).thenReturn(adminEnvironment);
 
         testingCluster.start();
@@ -139,8 +137,9 @@ class ServiceDiscoveryBundleDwStalenessMonitorTest {
                 .build();
         bundle.initialize(bootstrap);
         bundle.run(configuration, environment);
-        bundle.getServerStatus().markStarted();
-        for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()){
+        bundle.getServerStatus()
+                .markStarted();
+        for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()) {
             lifeCycle.start();
         }
         bundle.registerHealthcheck(() -> HealthcheckStatus.healthy);
@@ -148,7 +147,7 @@ class ServiceDiscoveryBundleDwStalenessMonitorTest {
 
     @AfterEach
     void tearDown() throws Exception {
-        for (LifeCycle lifeCycle: lifecycleEnvironment.getManagedObjects()){
+        for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()) {
             lifeCycle.stop();
         }
         testingCluster.stop();
@@ -162,7 +161,8 @@ class ServiceDiscoveryBundleDwStalenessMonitorTest {
                 .orElse(null);
         Assertions.assertNotNull(info);
         Assertions.assertNotNull(info.getNodeData());
-        Assertions.assertEquals("testing", info.getNodeData().getEnvironment());
+        Assertions.assertEquals("testing", info.getNodeData()
+                .getEnvironment());
         Assertions.assertEquals("CustomHost", info.getHost());
         Assertions.assertEquals(21000, info.getPort());
         healthySucceeded.set(true);
