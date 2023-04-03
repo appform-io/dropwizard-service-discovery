@@ -20,7 +20,6 @@ package io.appform.dropwizard.discovery.bundle;
 import io.appform.ranger.client.RangerClient;
 import io.appform.ranger.common.server.ShardInfo;
 import io.appform.ranger.core.finder.serviceregistry.MapBasedServiceRegistry;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;

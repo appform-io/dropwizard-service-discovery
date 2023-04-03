@@ -17,23 +17,22 @@
 
 package io.appform.dropwizard.discovery.bundle.selectors;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.doReturn;
+
 import com.google.common.collect.ArrayListMultimap;
 import io.appform.ranger.common.server.ShardInfo;
 import io.appform.ranger.core.finder.serviceregistry.MapBasedServiceRegistry;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.appform.ranger.core.model.Service;
 import io.appform.ranger.core.model.ServiceNode;
+import java.util.UUID;
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.doReturn;
 
 /**
  *
@@ -62,7 +61,8 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
                                   8888,
                                   ShardInfo.builder().environment("x.y").build(),
                                   HealthcheckStatus.healthy,
-                                  System.currentTimeMillis()));
+                                  System.currentTimeMillis(),
+                                 "http"));
 
         serviceNodes.put(
                 ShardInfo.builder().environment("x").build(),
@@ -70,7 +70,8 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
                                   8888,
                                   ShardInfo.builder().environment("x.y").build(),
                                   HealthcheckStatus.healthy,
-                                  System.currentTimeMillis()));
+                                  System.currentTimeMillis(),
+                                 "http"));
 
         doReturn(serviceNodes).when(serviceRegistry).nodes();
 
@@ -92,14 +93,16 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
                                   8888,
                                   ShardInfo.builder().environment("x.y").build(),
                                   HealthcheckStatus.healthy,
-                                  System.currentTimeMillis()));
+                                  System.currentTimeMillis(),
+                                 "http"));
         serviceNodes.put(
                 ShardInfo.builder().environment("x").build(),
                 new ServiceNode<>("host2",
                                   8888,
                                   ShardInfo.builder().environment("x").build(),
                                   HealthcheckStatus.healthy,
-                                  System.currentTimeMillis()));
+                                  System.currentTimeMillis(),
+                                 "http"));
         doReturn(serviceNodes).when(serviceRegistry).nodes();
 
         val nodes = selector("x.y")
@@ -127,14 +130,16 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
                                   8888,
                                   ShardInfo.builder().environment("x.y").build(),
                                   HealthcheckStatus.healthy,
-                                  System.currentTimeMillis()));
+                                  System.currentTimeMillis(),
+                                 "http"));
         serviceNodes.put(
                 ShardInfo.builder().environment("x").build(),
                 new ServiceNode<>("host2",
                                   9999,
                                   ShardInfo.builder().environment("x").build(),
                                   HealthcheckStatus.healthy,
-                                  System.currentTimeMillis()));
+                                  System.currentTimeMillis(),
+                                 "http"));
         doReturn(serviceNodes).when(serviceRegistry).nodes();
 
         val nodes = selector("x.y").nodes(null, serviceRegistry);
