@@ -218,10 +218,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
 
         Preconditions.checkArgument(
                 !LOCAL_ADDRESSES.contains(publishedHostAddress) || new HashSet<>(LOCAL_ADDRESSES).containsAll(
-                        zkHostAddresses), String.format(
-                        "Looks like publishedHost has been pointed to %s and zookeeper has not been pointed to %s. This is wrong. \n"
-                                + "Set zookeeper host to %s in config in order to set publishedHost as %s for the running service",
-                        LOCAL_ADDRESSES, LOCAL_ADDRESSES, LOCAL_ADDRESSES, LOCAL_ADDRESSES));
+                        zkHostAddresses), "Not allowed to publish localhost address to remote zookeeper");
 
         return host;
     }
