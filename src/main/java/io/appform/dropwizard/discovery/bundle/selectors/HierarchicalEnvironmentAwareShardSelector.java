@@ -22,12 +22,15 @@ import io.appform.ranger.common.server.ShardInfo;
 import io.appform.ranger.core.finder.serviceregistry.MapBasedServiceRegistry;
 import io.appform.ranger.core.model.ServiceNode;
 import io.appform.ranger.core.model.ShardSelector;
-import lombok.extern.slf4j.Slf4j;
-import lombok.val;
-
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 /**
  *
@@ -64,7 +67,7 @@ public class HierarchicalEnvironmentAwareShardSelector implements ShardSelector<
                     .map(Map.Entry::getValue)
                     .collect(Collectors.toList());
             if (!eligibleNodes.isEmpty()) {
-                log.info("Effective environment for discovery of {} is {}", serviceName, env.environment);
+                log.debug("Effective environment for discovery of {} is {}", serviceName, env.environment);
                 return eligibleNodes;
             }
             log.trace("No nodes found for environment: {}", env.environment);

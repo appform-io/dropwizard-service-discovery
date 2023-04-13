@@ -17,20 +17,32 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
+import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodeAbsence;
+import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodePresence;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
+import io.dropwizard.jetty.ConnectorFactory;
+import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
+import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.setup.AdminEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.curator.test.TestingCluster;
@@ -41,16 +53,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodeAbsence;
-import static io.appform.dropwizard.discovery.bundle.TestUtils.assertNodePresence;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 
 @Slf4j
 class ServiceDiscoveryBundleDwMonitorTest {
+
+    static {
+        val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        root.setLevel(Level.INFO);
+    }
 
     private final HealthCheckRegistry healthChecks = new HealthCheckRegistry();
     private final JerseyEnvironment jerseyEnvironment = mock(JerseyEnvironment.class);
@@ -59,13 +69,11 @@ class ServiceDiscoveryBundleDwMonitorTest {
     private final Environment environment = mock(Environment.class);
     private final Bootstrap<?> bootstrap = mock(Bootstrap.class);
     private final Configuration configuration = mock(Configuration.class);
-
-    static {
-        val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        root.setLevel(Level.INFO);
-    }
-
-
+    private final DefaultServerFactory serverFactory = mock(DefaultServerFactory.class);
+    private final ConnectorFactory connectorFactory = mock(HttpConnectorFactory.class);
+    private final TestingCluster testingCluster = new TestingCluster(1);
+    private final HealthcheckStatus status = HealthcheckStatus.healthy;
+    private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
     private final ServiceDiscoveryBundle<Configuration> bundle = new ServiceDiscoveryBundle<Configuration>() {
         @Override
         protected ServiceDiscoveryConfiguration getRangerConfiguration(Configuration configuration) {
@@ -89,48 +97,51 @@ class ServiceDiscoveryBundleDwMonitorTest {
 
     };
 
-    private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
-    private final TestingCluster testingCluster = new TestingCluster(1);
-    private final HealthcheckStatus status = HealthcheckStatus.healthy;
-
     @BeforeEach
     void setup() throws Exception {
         healthChecks.register("twice-healthy-only", new HealthCheck() {
             private final AtomicInteger counter = new AtomicInteger(5);
+
             @Override
             protected Result check() {
-                val result = (counter.decrementAndGet() < 0) ? Result.unhealthy("unhealthy") : Result.healthy();
+                val result = (counter.decrementAndGet() < 0)
+                             ? Result.unhealthy("unhealthy")
+                             : Result.healthy();
                 log.info("Marking node as {}", result.isHealthy());
                 return result;
             }
         });
 
+        when(serverFactory.getApplicationConnectors()).thenReturn(Lists.newArrayList(connectorFactory));
+        when(configuration.getServerFactory()).thenReturn(serverFactory);
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
         when(environment.jersey()).thenReturn(jerseyEnvironment);
         when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
         when(environment.healthChecks()).thenReturn(healthChecks);
         when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
         AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
-        doNothing().when(adminEnvironment).addTask(any());
+        doNothing().when(adminEnvironment)
+                .addTask(any());
         when(environment.admin()).thenReturn(adminEnvironment);
 
         testingCluster.start();
 
         serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
-                                                                     .zookeeper(testingCluster.getConnectString())
-                                                                     .namespace("test")
-                                                                     .environment("testing")
-                                                                     .connectionRetryIntervalMillis(5000)
-                                                                     .publishedHost("TestHost")
-                                                                     .publishedPort(8021)
-                                                                     .initialRotationStatus(true)
-                                                                     .dropwizardCheckInterval(2)
-                                                                     .dropwizardCheckStaleness(2)
-                                                                     .build();
+                .zookeeper(testingCluster.getConnectString())
+                .namespace("test")
+                .environment("testing")
+                .connectionRetryIntervalMillis(5000)
+                .publishedHost("TestHost")
+                .publishedPort(8021)
+                .initialRotationStatus(true)
+                .dropwizardCheckInterval(2)
+                .dropwizardCheckStaleness(2)
+                .build();
         bundle.initialize(bootstrap);
         bundle.run(configuration, environment);
-        bundle.getServerStatus().markStarted();
-        for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()){
+        bundle.getServerStatus()
+                .markStarted();
+        for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()) {
             lifeCycle.start();
         }
         bundle.registerHealthcheck(() -> status);
@@ -138,7 +149,7 @@ class ServiceDiscoveryBundleDwMonitorTest {
 
     @AfterEach
     void tearDown() throws Exception {
-        for (LifeCycle lifeCycle: lifecycleEnvironment.getManagedObjects()){
+        for (LifeCycle lifeCycle : lifecycleEnvironment.getManagedObjects()) {
             lifeCycle.stop();
         }
         testingCluster.stop();
@@ -152,7 +163,8 @@ class ServiceDiscoveryBundleDwMonitorTest {
                 .orElse(null);
         Assertions.assertNotNull(info);
         Assertions.assertNotNull(info.getNodeData());
-        Assertions.assertEquals("testing", info.getNodeData().getEnvironment());
+        Assertions.assertEquals("testing", info.getNodeData()
+                .getEnvironment());
         Assertions.assertEquals("CustomHost", info.getHost());
         Assertions.assertEquals(21000, info.getPort());
 

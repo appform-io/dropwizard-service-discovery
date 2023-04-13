@@ -17,14 +17,13 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
-import io.dropwizard.Configuration;
-import lombok.experimental.UtilityClass;
-import org.awaitility.Awaitility;
-
-import java.time.Duration;
-
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+
+import io.dropwizard.Configuration;
+import java.time.Duration;
+import lombok.experimental.UtilityClass;
+import org.awaitility.Awaitility;
 
 /**
  *
