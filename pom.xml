@@ -277,6 +277,7 @@
             <groupId>com.alibaba</groupId>
             <artifactId>dns-cache-manipulator</artifactId>
             <version>${dns.cache.manipulator.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

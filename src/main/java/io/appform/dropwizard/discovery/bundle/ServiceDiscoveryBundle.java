@@ -217,8 +217,8 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .collect(Collectors.toSet());
 
         Preconditions.checkArgument(
-                !LOCAL_ADDRESSES.contains(publishedHostAddress) || new HashSet<>(LOCAL_ADDRESSES).containsAll(
-                        zkHostAddresses), "Not allowed to publish localhost address to remote zookeeper");
+                !LOCAL_ADDRESSES.contains(publishedHostAddress) || LOCAL_ADDRESSES.containsAll(zkHostAddresses),
+                "Not allowed to publish localhost address to remote zookeeper");
 
         return host;
     }
