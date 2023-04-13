@@ -64,9 +64,12 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -197,11 +200,29 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                            .getCanonicalHostName()
                    : serviceDiscoveryConfiguration.getPublishedHost();
 
-        Preconditions.checkArgument(!LOCAL_ADDRESSES.contains(host) || LOCAL_ADDRESSES.stream()
-                        .anyMatch(localhost -> serviceDiscoveryConfiguration.getZookeeper()
-                                .contains(localhost)),
-                "Looks like publishedHost has been set to localhost/127.0.0.1 and zookeeper has not been set to localhost/127.0.0.1. This is wrong. \n"
-                        + "Set zookeeper host to localhost/127.0.0.1 in config in order to set publishedHost as localhost/127.0.0.1 for the running service");
+        String publishedHostAddress = InetAddress.getByName(host)
+                .getHostAddress();
+
+        Set<String> zkHostAddresses = serviceDiscoveryConfiguration.getZookeeperHosts()
+                .stream()
+                .map(zkHost -> {
+                    try {
+                        return InetAddress.getByName(zkHost)
+                                .getHostAddress();
+                    } catch (UnknownHostException e) {
+                        throw new RuntimeException(
+                                String.format("Couldn't resolve host address for zkHost : %s", zkHost), e);
+                    }
+                })
+                .collect(Collectors.toSet());
+
+        Preconditions.checkArgument(
+                !LOCAL_ADDRESSES.contains(publishedHostAddress) || new HashSet<>(LOCAL_ADDRESSES).containsAll(
+                        zkHostAddresses), String.format(
+                        "Looks like publishedHost has been pointed to %s and zookeeper has not been pointed to %s. This is wrong. \n"
+                                + "Set zookeeper host to %s in config in order to set publishedHost as %s for the running service",
+                        LOCAL_ADDRESSES, LOCAL_ADDRESSES, LOCAL_ADDRESSES, LOCAL_ADDRESSES));
+
         return host;
     }
 

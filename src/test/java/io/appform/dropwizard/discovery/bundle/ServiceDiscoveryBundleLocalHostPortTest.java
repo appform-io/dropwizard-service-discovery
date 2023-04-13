@@ -17,6 +17,13 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
+import com.alibaba.dcm.DnsCacheManipulator;
+import java.net.UnknownHostException;
+import java.util.Objects;
+import javax.naming.NamingException;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -76,38 +83,105 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
 
 
+    @Test
+    void shouldNotAllowPublishingLocalHostAddressToRemoteZk1() throws NamingException, UnknownHostException {
+        DnsCacheManipulator.setDnsCache("myzookeeper", "19.10.1.1");
+        DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
+        DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
+
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
+            when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
+            when(environment.jersey()).thenReturn(jerseyEnvironment);
+            when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
+            when(environment.healthChecks()).thenReturn(healthChecks);
+            when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
+            AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
+            doNothing().when(adminEnvironment)
+                    .addTask(any());
+            when(environment.admin()).thenReturn(adminEnvironment);
+
+            serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
+                    .zookeeper("myzookeeper:2181,myfavzookeeper:2181")
+                    .namespace("test")
+                    .environment("testing")
+                    .connectionRetryIntervalMillis(5000)
+                    .publishedHost("custom-host")
+                    .publishedPort(8021)
+                    .initialRotationStatus(true)
+                    .build();
+            bundle.initialize(bootstrap);
+            bundle.run(configuration, environment);
+
+        });
+
+        assertTrue(thrown.getMessage()
+                .contains(String.format(
+                        "Looks like publishedHost has been pointed to %s and zookeeper has not been pointed to %s",
+                        Constants.LOCAL_ADDRESSES, Constants.LOCAL_ADDRESSES)));
+
+    }
 
     @Test
-    void testDiscovery() {
-        IllegalArgumentException thrown = assertThrows(
-                IllegalArgumentException.class,
-                () -> {
-                    when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
-                    when(environment.jersey()).thenReturn(jerseyEnvironment);
-                    when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
-                    when(environment.healthChecks()).thenReturn(healthChecks);
-                    when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
-                    AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
-                    doNothing().when(adminEnvironment).addTask(any());
-                    when(environment.admin()).thenReturn(adminEnvironment);
+    void shouldAllowPublishingLocalHostAddressToLocalZk() throws NamingException, UnknownHostException {
+        DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
+        DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
 
+        assertDoesNotThrow(() -> {
+            when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
+            when(environment.jersey()).thenReturn(jerseyEnvironment);
+            when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
+            when(environment.healthChecks()).thenReturn(healthChecks);
+            when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
+            AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
+            doNothing().when(adminEnvironment)
+                    .addTask(any());
+            when(environment.admin()).thenReturn(adminEnvironment);
 
-                    serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
-                            .zookeeper("myzookeeper.host:2181")
-                            .namespace("test")
-                            .environment("testing")
-                            .connectionRetryIntervalMillis(5000)
-                            .publishedHost("localhost")
-                            .publishedPort(8021)
-                            .initialRotationStatus(true)
-                            .build();
-                    bundle.initialize(bootstrap);
-                    bundle.run(configuration, environment);
+            serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
+                    .zookeeper("localhost:2181,myfavzookeeper:2181")
+                    .namespace("test")
+                    .environment("testing")
+                    .connectionRetryIntervalMillis(5000)
+                    .publishedHost("localhost")
+                    .publishedPort(8021)
+                    .initialRotationStatus(true)
+                    .build();
+            bundle.initialize(bootstrap);
+            bundle.run(configuration, environment);
 
-                }
-        );
+        });
 
-        assertTrue(thrown.getMessage().contains("Looks like publishedHost has been set to localhost/127.0.0.1 and zookeeper has not been set to localhost/127.0.0.1. This is wrong"));
+    }
+
+    @Test
+    void shouldAllowPublishingRemoteHostAddressToRemoteZk() throws NamingException, UnknownHostException {
+        DnsCacheManipulator.setDnsCache("myfavzookeeper", "17.4.0.1");
+        DnsCacheManipulator.setDnsCache("custom-host", "17.1.2.1");
+
+        assertDoesNotThrow(() -> {
+            when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
+            when(environment.jersey()).thenReturn(jerseyEnvironment);
+            when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
+            when(environment.healthChecks()).thenReturn(healthChecks);
+            when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
+            AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
+            doNothing().when(adminEnvironment)
+                    .addTask(any());
+            when(environment.admin()).thenReturn(adminEnvironment);
+
+            serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
+                    .zookeeper("myfavzookeeper:2181")
+                    .namespace("test")
+                    .environment("testing")
+                    .connectionRetryIntervalMillis(5000)
+                    .publishedHost("custom-host")
+                    .publishedPort(8021)
+                    .initialRotationStatus(true)
+                    .build();
+            bundle.initialize(bootstrap);
+            bundle.run(configuration, environment);
+
+        });
 
     }
 }

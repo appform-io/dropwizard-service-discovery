@@ -32,5 +32,8 @@ public class Constants {
     public static final int DEFAULT_DW_CHECK_INTERVAL = 15;
     public static final int DEFAULT_RETRY_CONN_INTERVAL = 5000;
 
-    public static final List<String> LOCAL_ADDRESSES = Arrays.asList("127.0.0.1", "localhost");
+    public static final String ZOOKEEPER_HOST_DELIMITER = ",";
+    public static final String HOST_PORT_DELIMITER = ":";
+
+    public static final List<String> LOCAL_ADDRESSES = Arrays.asList("127.0.0.1","127.0.1.1", "localhost");
 }

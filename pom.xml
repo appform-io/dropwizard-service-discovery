@@ -122,6 +122,7 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <awaitility.version>4.2.0</awaitility.version>
         <logback.version>1.2.10</logback.version>
+        <dns.cache.manipulator.version>1.7.2</dns.cache.manipulator.version>
     </properties>
 
     <dependencyManagement>
@@ -271,6 +272,11 @@
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>dns-cache-manipulator</artifactId>
+            <version>${dns.cache.manipulator.version}</version>
         </dependency>
     </dependencies>
 
