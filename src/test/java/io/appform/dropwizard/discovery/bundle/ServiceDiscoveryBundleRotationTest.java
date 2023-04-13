@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
+import com.alibaba.dcm.DnsCacheManipulator;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -113,6 +114,12 @@ class ServiceDiscoveryBundleRotationTest {
                 .publishedPort(8021)
                 .initialRotationStatus(true)
                 .build();
+
+        DnsCacheManipulator.setDnsCache("TestHost", "127.0.0.1");
+        serviceDiscoveryConfiguration.getZookeeperHosts()
+                .forEach(zkHost -> {
+                    DnsCacheManipulator.setDnsCache(zkHost, "127.0.0.1");
+                });
         bundle.initialize(bootstrap);
         bundle.run(configuration, environment);
         rotationStatus = bundle.getRotationStatus();
