@@ -118,9 +118,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
         });
 
         assertTrue(thrown.getMessage()
-                .contains(String.format(
-                        "Looks like publishedHost has been pointed to %s and zookeeper has not been pointed to %s",
-                        Constants.LOCAL_ADDRESSES, Constants.LOCAL_ADDRESSES)));
+                .contains("Not allowed to publish localhost address to remote zookeeper"));
 
     }
 
