@@ -42,6 +42,7 @@ import java.net.UnknownHostException;
 import javax.naming.NamingException;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
@@ -77,11 +78,16 @@ class ServiceDiscoveryBundleLocalHostPortTest {
 
     };
 
+    @AfterEach
+    public void afterMethod(){
+        DnsCacheManipulator.clearDnsCache();
+    }
+
     private ServiceDiscoveryConfiguration serviceDiscoveryConfiguration;
 
 
     @Test
-    void shouldNotAllowPublishingLocalHostAddressToRemoteZk1() throws NamingException, UnknownHostException {
+    void shouldNotAllowPublishingLocalHostAddressToRemoteZk() throws NamingException, UnknownHostException {
         DnsCacheManipulator.setDnsCache("myzookeeper", "19.10.1.1");
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
         DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
