@@ -133,7 +133,6 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                 .namespace(namespace)
                 .retryPolicy(new RetryForever(serviceDiscoveryConfiguration.getConnectionRetryIntervalMillis()))
                 .build();
-        curator.start();
         serviceProvider = buildServiceProvider(environment, objectMapper, namespace, serviceName, hostname, port,
                 portScheme);
         serviceDiscoveryClient = buildDiscoveryClient(environment, namespace, serviceName, initialCriteria,
@@ -293,6 +292,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
         @Override
         public void start() {
             log.debug("Starting the discovery manager");
+            curator.start();
             serviceProvider.start();
             serviceDiscoveryClient.start();
             val nodeIdManager = new NodeIdManager(curator, serviceName);
