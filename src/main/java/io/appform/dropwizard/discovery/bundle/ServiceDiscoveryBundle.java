@@ -210,7 +210,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                         return InetAddress.getByName(zkHost)
                                 .getHostAddress();
                     } catch (UnknownHostException e) {
-                        throw new RuntimeException(
+                        throw new IllegalArgumentException(
                                 String.format("Couldn't resolve host address for zkHost : %s", zkHost), e);
                     }
                 })
