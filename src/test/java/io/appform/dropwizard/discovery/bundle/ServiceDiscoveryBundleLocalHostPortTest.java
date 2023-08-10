@@ -39,6 +39,7 @@ import io.dropwizard.setup.AdminEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import java.net.UnknownHostException;
+import java.util.UUID;
 import javax.naming.NamingException;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -79,7 +80,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     };
 
     @AfterEach
-    public void afterMethod(){
+    public void afterMethod() {
         DnsCacheManipulator.clearDnsCache();
     }
 
@@ -87,7 +88,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
 
 
     @Test
-    void shouldNotAllowPublishingLocalHostAddressToRemoteZk() throws NamingException, UnknownHostException {
+    void shouldNotAllowPublishingLocalHostAddressToRemoteZk() {
         DnsCacheManipulator.setDnsCache("myzookeeper", "19.10.1.1");
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
         DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
@@ -123,7 +124,97 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     }
 
     @Test
-    void shouldAllowPublishingLocalHostAddressToLocalZk() throws NamingException, UnknownHostException {
+    void shouldThrowExceptionWhenUsingUnresolvableZkHost() {
+        DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
+
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
+            when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
+            when(environment.jersey()).thenReturn(jerseyEnvironment);
+            when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
+            when(environment.healthChecks()).thenReturn(healthChecks);
+            when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
+            AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
+            doNothing().when(adminEnvironment)
+                    .addTask(any());
+            when(environment.admin()).thenReturn(adminEnvironment);
+
+            serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
+                    .zookeeper(String.format("%s:2181", UUID.randomUUID()))
+                    .namespace("test")
+                    .environment("testing")
+                    .connectionRetryIntervalMillis(5000)
+                    .publishedHost("custom-host")
+                    .publishedPort(8021)
+                    .initialRotationStatus(true)
+                    .build();
+            bundle.initialize(bootstrap);
+            bundle.run(configuration, environment);
+
+        });
+
+        assertTrue(thrown.getMessage()
+                .contains("Couldn't resolve host address for zkHost"));
+
+    }
+
+    @Test
+    void shouldAllowPublishingIpAddressToRemoteZkWithNullOrEmptyHost() {
+        DnsCacheManipulator.setDnsCache("myzookeeper", "19.10.1.1");
+        DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
+        DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
+
+        assertDoesNotThrow(() -> {
+            when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
+            when(environment.jersey()).thenReturn(jerseyEnvironment);
+            when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
+            when(environment.healthChecks()).thenReturn(healthChecks);
+            when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
+            AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
+            doNothing().when(adminEnvironment)
+                    .addTask(any());
+            when(environment.admin()).thenReturn(adminEnvironment);
+
+            serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
+                    .zookeeper("myzookeeper:2181,myfavzookeeper:2181")
+                    .namespace("test")
+                    .environment("testing")
+                    .connectionRetryIntervalMillis(5000)
+                    .publishedHost("")
+                    .publishedPort(8021)
+                    .initialRotationStatus(true)
+                    .build();
+            bundle.initialize(bootstrap);
+            bundle.run(configuration, environment);
+
+        });
+
+        assertDoesNotThrow(() -> {
+            when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
+            when(environment.jersey()).thenReturn(jerseyEnvironment);
+            when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
+            when(environment.healthChecks()).thenReturn(healthChecks);
+            when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
+            AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
+            doNothing().when(adminEnvironment)
+                    .addTask(any());
+            when(environment.admin()).thenReturn(adminEnvironment);
+
+            serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
+                    .zookeeper("myzookeeper:2181,myfavzookeeper:2181")
+                    .namespace("test")
+                    .environment("testing")
+                    .connectionRetryIntervalMillis(5000)
+                    .publishedPort(8021)
+                    .initialRotationStatus(true)
+                    .build();
+            bundle.initialize(bootstrap);
+            bundle.run(configuration, environment);
+
+        });
+    }
+
+    @Test
+    void shouldAllowPublishingLocalHostAddressToLocalZk() {
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
         DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
 
@@ -155,7 +246,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     }
 
     @Test
-    void shouldAllowPublishingRemoteHostAddressToRemoteZk() throws NamingException, UnknownHostException {
+    void shouldAllowPublishingRemoteHostAddressToRemoteZk() {
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "17.4.0.1");
         DnsCacheManipulator.setDnsCache("custom-host", "17.1.2.1");
 
