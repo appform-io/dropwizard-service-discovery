@@ -25,8 +25,6 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import com.alibaba.dcm.DnsCacheManipulator;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
@@ -38,15 +36,10 @@ import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.setup.AdminEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-import java.net.UnknownHostException;
 import java.util.UUID;
-import javax.naming.NamingException;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 
 @Slf4j
@@ -59,12 +52,6 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     private final Environment environment = mock(Environment.class);
     private final Bootstrap<?> bootstrap = mock(Bootstrap.class);
     private final Configuration configuration = mock(Configuration.class);
-
-    static {
-        val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        root.setLevel(Level.INFO);
-    }
-
 
     private final ServiceDiscoveryBundle<Configuration> bundle = new ServiceDiscoveryBundle<Configuration>() {
         @Override
@@ -191,7 +178,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     }
 
     @Test
-    public void shouldPublishWithNullZkHost(){
+    public void shouldPublishWithNullZkHost() {
         DnsCacheManipulator.setDnsCache("myzookeeper", "19.10.1.1");
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
         DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
@@ -219,6 +206,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
 
         });
     }
+
     @Test
     void shouldPublishingToLocalZk() {
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");

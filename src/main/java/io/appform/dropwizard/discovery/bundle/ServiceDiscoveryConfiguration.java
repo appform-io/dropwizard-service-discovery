@@ -18,6 +18,7 @@
 package io.appform.dropwizard.discovery.bundle;
 
 import static io.appform.dropwizard.discovery.bundle.Constants.HOST_PORT_DELIMITER;
+import static io.appform.dropwizard.discovery.bundle.Constants.PATH_DELIMITER;
 import static io.appform.dropwizard.discovery.bundle.Constants.ZOOKEEPER_HOST_DELIMITER;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -90,6 +91,7 @@ public class ServiceDiscoveryConfiguration {
     public Set<String> getZookeeperHosts() {
         return Arrays.stream(zookeeper.split(ZOOKEEPER_HOST_DELIMITER))
                 .map(zkHostPort -> zkHostPort.split(HOST_PORT_DELIMITER)[0])
+                .map(zkHostPath -> zkHostPath.split(PATH_DELIMITER)[0])
                 .collect(Collectors.toSet());
     }
 

@@ -34,6 +34,7 @@ public class Constants {
 
     public static final String ZOOKEEPER_HOST_DELIMITER = ",";
     public static final String HOST_PORT_DELIMITER = ":";
+    public static final String PATH_DELIMITER = "/";
 
     public static final Set<String> LOCAL_ADDRESSES = ImmutableSet.of("127.0.0.1", "127.0.1.1", "localhost");
 }
