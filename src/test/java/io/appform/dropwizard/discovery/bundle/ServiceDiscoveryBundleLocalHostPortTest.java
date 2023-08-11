@@ -127,27 +127,28 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     void shouldThrowExceptionWhenUsingUnresolvableZkHost() {
         DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
 
-        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
-            when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
-            when(environment.jersey()).thenReturn(jerseyEnvironment);
-            when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
-            when(environment.healthChecks()).thenReturn(healthChecks);
-            when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
-            AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
-            doNothing().when(adminEnvironment)
-                    .addTask(any());
-            when(environment.admin()).thenReturn(adminEnvironment);
+        when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
+        when(environment.jersey()).thenReturn(jerseyEnvironment);
+        when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
+        when(environment.healthChecks()).thenReturn(healthChecks);
+        when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
+        AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
+        doNothing().when(adminEnvironment)
+                .addTask(any());
+        when(environment.admin()).thenReturn(adminEnvironment);
 
-            serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
-                    .zookeeper(String.format("%s:2181", UUID.randomUUID()))
-                    .namespace("test")
-                    .environment("testing")
-                    .connectionRetryIntervalMillis(5000)
-                    .publishedHost("custom-host")
-                    .publishedPort(8021)
-                    .initialRotationStatus(true)
-                    .build();
-            bundle.initialize(bootstrap);
+        serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
+                .zookeeper(String.format("%s:2181", UUID.randomUUID()))
+                .namespace("test")
+                .environment("testing")
+                .connectionRetryIntervalMillis(5000)
+                .publishedHost("custom-host")
+                .publishedPort(8021)
+                .initialRotationStatus(true)
+                .build();
+        bundle.initialize(bootstrap);
+
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
             bundle.run(configuration, environment);
 
         });
@@ -158,61 +159,65 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     }
 
     @Test
-    void shouldAllowPublishingIpAddressToRemoteZkWithNullOrEmptyHost() {
+    void shouldAllowPublishingIpAddressToRemoteZkWithEmptyHost() {
         DnsCacheManipulator.setDnsCache("myzookeeper", "19.10.1.1");
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
         DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
+        when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
+        when(environment.jersey()).thenReturn(jerseyEnvironment);
+        when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
+        when(environment.healthChecks()).thenReturn(healthChecks);
+        when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
+        AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
+        doNothing().when(adminEnvironment)
+                .addTask(any());
+        when(environment.admin()).thenReturn(adminEnvironment);
 
+        serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
+                .zookeeper("myzookeeper:2181,myfavzookeeper:2181")
+                .namespace("test")
+                .environment("testing")
+                .connectionRetryIntervalMillis(5000)
+                .publishedHost("")
+                .publishedPort(8021)
+                .initialRotationStatus(true)
+                .build();
+        bundle.initialize(bootstrap);
         assertDoesNotThrow(() -> {
-            when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
-            when(environment.jersey()).thenReturn(jerseyEnvironment);
-            when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
-            when(environment.healthChecks()).thenReturn(healthChecks);
-            when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
-            AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
-            doNothing().when(adminEnvironment)
-                    .addTask(any());
-            when(environment.admin()).thenReturn(adminEnvironment);
-
-            serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
-                    .zookeeper("myzookeeper:2181,myfavzookeeper:2181")
-                    .namespace("test")
-                    .environment("testing")
-                    .connectionRetryIntervalMillis(5000)
-                    .publishedHost("")
-                    .publishedPort(8021)
-                    .initialRotationStatus(true)
-                    .build();
-            bundle.initialize(bootstrap);
-            bundle.run(configuration, environment);
-
-        });
-
-        assertDoesNotThrow(() -> {
-            when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
-            when(environment.jersey()).thenReturn(jerseyEnvironment);
-            when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
-            when(environment.healthChecks()).thenReturn(healthChecks);
-            when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
-            AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
-            doNothing().when(adminEnvironment)
-                    .addTask(any());
-            when(environment.admin()).thenReturn(adminEnvironment);
-
-            serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
-                    .zookeeper("myzookeeper:2181,myfavzookeeper:2181")
-                    .namespace("test")
-                    .environment("testing")
-                    .connectionRetryIntervalMillis(5000)
-                    .publishedPort(8021)
-                    .initialRotationStatus(true)
-                    .build();
-            bundle.initialize(bootstrap);
             bundle.run(configuration, environment);
 
         });
     }
 
+    @Test
+    public void shouldAllowPublishingIpAddressToRemoteZkWithNullHost(){
+        DnsCacheManipulator.setDnsCache("myzookeeper", "19.10.1.1");
+        DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
+        DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
+        when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
+        when(environment.jersey()).thenReturn(jerseyEnvironment);
+        when(environment.lifecycle()).thenReturn(lifecycleEnvironment);
+        when(environment.healthChecks()).thenReturn(healthChecks);
+        when(environment.getObjectMapper()).thenReturn(new ObjectMapper());
+        AdminEnvironment adminEnvironment = mock(AdminEnvironment.class);
+        doNothing().when(adminEnvironment)
+                .addTask(any());
+        when(environment.admin()).thenReturn(adminEnvironment);
+
+        serviceDiscoveryConfiguration = ServiceDiscoveryConfiguration.builder()
+                .zookeeper("myzookeeper:2181,myfavzookeeper:2181")
+                .namespace("test")
+                .environment("testing")
+                .connectionRetryIntervalMillis(5000)
+                .publishedPort(8021)
+                .initialRotationStatus(true)
+                .build();
+        bundle.initialize(bootstrap);
+        assertDoesNotThrow(() -> {
+            bundle.run(configuration, environment);
+
+        });
+    }
     @Test
     void shouldAllowPublishingLocalHostAddressToLocalZk() {
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
