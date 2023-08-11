@@ -17,6 +17,8 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
+import static io.appform.dropwizard.discovery.bundle.Constants.LOCAL_ADDRESSES;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -60,11 +62,16 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -188,11 +195,33 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
     protected String getHost() throws UnknownHostException {
-        val host = serviceDiscoveryConfiguration.getPublishedHost();
-        if (Strings.isNullOrEmpty(host) || host.equals(Constants.DEFAULT_HOST)) {
-            return InetAddress.getLocalHost()
-                    .getCanonicalHostName();
-        }
+        val host = (Strings.isNullOrEmpty(serviceDiscoveryConfiguration.getPublishedHost())
+                || serviceDiscoveryConfiguration.getPublishedHost()
+                .equals(Constants.DEFAULT_HOST))
+                   ? InetAddress.getLocalHost()
+                           .getCanonicalHostName()
+                   : serviceDiscoveryConfiguration.getPublishedHost();
+
+        val publishedHostAddress = InetAddress.getByName(host)
+                .getHostAddress();
+
+        val zkHostAddresses = serviceDiscoveryConfiguration.getZookeeperHosts()
+                .stream()
+                .map(zkHost -> {
+                    try {
+                        return InetAddress.getByName(zkHost)
+                                .getHostAddress();
+                    } catch (UnknownHostException e) {
+                        throw new IllegalArgumentException(
+                                String.format("Couldn't resolve host address for zkHost : %s", zkHost), e);
+                    }
+                })
+                .collect(Collectors.toSet());
+
+        Preconditions.checkArgument(
+                !LOCAL_ADDRESSES.contains(publishedHostAddress) || LOCAL_ADDRESSES.containsAll(zkHostAddresses),
+                "Not allowed to publish localhost address to remote zookeeper");
+
         return host;
     }
 

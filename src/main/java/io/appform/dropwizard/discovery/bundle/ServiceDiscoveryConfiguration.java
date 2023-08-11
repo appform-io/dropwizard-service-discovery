@@ -17,8 +17,15 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
+import static io.appform.dropwizard.discovery.bundle.Constants.HOST_PORT_DELIMITER;
+import static io.appform.dropwizard.discovery.bundle.Constants.PATH_DELIMITER;
+import static io.appform.dropwizard.discovery.bundle.Constants.ZOOKEEPER_HOST_DELIMITER;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Strings;
+import java.util.Arrays;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
@@ -37,6 +44,8 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 public class ServiceDiscoveryConfiguration {
+
+
     @NotNull
     @NotEmpty
     private String namespace = Constants.DEFAULT_NAMESPACE;
@@ -78,21 +87,28 @@ public class ServiceDiscoveryConfiguration {
 
     private Set<String> tags;
 
+    @JsonIgnore
+    public Set<String> getZookeeperHosts() {
+        return Arrays.stream(zookeeper.split(ZOOKEEPER_HOST_DELIMITER))
+                .map(zkHostPort -> zkHostPort.split(HOST_PORT_DELIMITER)[0])
+                .map(zkHostPath -> zkHostPath.split(PATH_DELIMITER)[0])
+                .collect(Collectors.toSet());
+    }
+
     @Builder
-    public ServiceDiscoveryConfiguration(
-            String namespace,
-            String environment,
-            String zookeeper,
-            int connectionRetryIntervalMillis,
-            String publishedHost,
-            int publishedPort,
-            int refreshTimeMs,
-            boolean disableWatchers,
-            long initialDelaySeconds,
-            boolean initialRotationStatus,
-            int dropwizardCheckInterval,
-            int dropwizardCheckStaleness,
-            Set<String> tags) {
+    public ServiceDiscoveryConfiguration(String namespace,
+                                         String environment,
+                                         String zookeeper,
+                                         int connectionRetryIntervalMillis,
+                                         String publishedHost,
+                                         int publishedPort,
+                                         int refreshTimeMs,
+                                         boolean disableWatchers,
+                                         long initialDelaySeconds,
+                                         boolean initialRotationStatus,
+                                         int dropwizardCheckInterval,
+                                         int dropwizardCheckStaleness,
+                                         Set<String> tags) {
         this.namespace = Strings.isNullOrEmpty(namespace)
                          ? Constants.DEFAULT_NAMESPACE
                          : namespace;

@@ -6,3 +6,4 @@ target
 *.iws
 /dep
 out
+.java-version
