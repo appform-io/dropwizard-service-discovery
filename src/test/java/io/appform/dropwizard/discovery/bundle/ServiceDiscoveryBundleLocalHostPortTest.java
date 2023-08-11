@@ -44,6 +44,7 @@ import javax.naming.NamingException;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +89,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
 
 
     @Test
-    void shouldNotAllowPublishingLocalHostAddressToRemoteZk() {
+    void shouldFailLocalhostPublish() {
         DnsCacheManipulator.setDnsCache("myzookeeper", "19.10.1.1");
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
         DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
@@ -124,7 +125,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     }
 
     @Test
-    void shouldThrowExceptionWhenUsingUnresolvableZkHost() {
+    void shouldThrowExceptionForInvalidZkHost() {
         DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
 
         when(jerseyEnvironment.getResourceConfig()).thenReturn(new DropwizardResourceConfig());
@@ -159,7 +160,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     }
 
     @Test
-    void shouldAllowPublishingIpAddressToRemoteZkWithEmptyHost() {
+    void shouldPublishWithEmptyZkHost() {
         DnsCacheManipulator.setDnsCache("myzookeeper", "19.10.1.1");
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
         DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
@@ -190,7 +191,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     }
 
     @Test
-    public void shouldAllowPublishingIpAddressToRemoteZkWithNullHost(){
+    public void shouldPublishWithNullZkHost(){
         DnsCacheManipulator.setDnsCache("myzookeeper", "19.10.1.1");
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
         DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
@@ -219,7 +220,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
         });
     }
     @Test
-    void shouldAllowPublishingLocalHostAddressToLocalZk() {
+    void shouldPublishingToLocalZk() {
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
         DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
 
@@ -251,7 +252,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     }
 
     @Test
-    void shouldAllowPublishingRemoteHostAddressToRemoteZk() {
+    void shouldPublishToRemoteZk() {
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "17.4.0.1");
         DnsCacheManipulator.setDnsCache("custom-host", "17.1.2.1");
 

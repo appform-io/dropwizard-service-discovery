@@ -202,10 +202,10 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
                            .getCanonicalHostName()
                    : serviceDiscoveryConfiguration.getPublishedHost();
 
-        String publishedHostAddress = InetAddress.getByName(host)
+        val publishedHostAddress = InetAddress.getByName(host)
                 .getHostAddress();
 
-        Set<String> zkHostAddresses = serviceDiscoveryConfiguration.getZookeeperHosts()
+        val zkHostAddresses = serviceDiscoveryConfiguration.getZookeeperHosts()
                 .stream()
                 .map(zkHost -> {
                     try {
