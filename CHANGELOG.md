@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.28-8]
+- Change default published host to localhost 
+
 ## [2.0.28-7]
 - Added validation to prevent users from publishing local address to remote zookeeper
 
