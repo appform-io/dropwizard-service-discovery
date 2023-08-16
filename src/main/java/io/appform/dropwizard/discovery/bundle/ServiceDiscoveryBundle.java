@@ -195,12 +195,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
     protected String getHost() throws UnknownHostException {
-        val host = (Strings.isNullOrEmpty(serviceDiscoveryConfiguration.getPublishedHost())
-                || serviceDiscoveryConfiguration.getPublishedHost()
-                .equals(Constants.DEFAULT_HOST))
-                   ? InetAddress.getLocalHost()
-                           .getCanonicalHostName()
-                   : serviceDiscoveryConfiguration.getPublishedHost();
+        val host = serviceDiscoveryConfiguration.getPublishedHost();
 
         val publishedHostAddress = InetAddress.getByName(host)
                 .getHostAddress();
