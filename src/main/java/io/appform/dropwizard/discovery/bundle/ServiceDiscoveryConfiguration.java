@@ -64,7 +64,7 @@ public class ServiceDiscoveryConfiguration {
 
     @NotNull
     @NotEmpty
-    private String publishedHost = Constants.DEFAULT_HOST;
+    private String publishedHost = Constants.LOCALHOST;
 
     @NotNull
     @Min(-1)
@@ -118,7 +118,7 @@ public class ServiceDiscoveryConfiguration {
                                              ? Constants.DEFAULT_RETRY_CONN_INTERVAL
                                              : connectionRetryIntervalMillis;
         this.publishedHost = Strings.isNullOrEmpty(publishedHost)
-                             ? Constants.DEFAULT_HOST
+                             ? Constants.LOCALHOST
                              : publishedHost;
         this.publishedPort = publishedPort == 0
                              ? Constants.DEFAULT_PORT
