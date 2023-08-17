@@ -23,7 +23,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import io.appform.dropwizard.discovery.bundle.healthchecks.InitialDelayChecker;
 import io.appform.dropwizard.discovery.bundle.healthchecks.InternalHealthChecker;
@@ -62,13 +61,9 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -195,12 +190,7 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
     protected String getHost() throws UnknownHostException {
-        val host = (Strings.isNullOrEmpty(serviceDiscoveryConfiguration.getPublishedHost())
-                || serviceDiscoveryConfiguration.getPublishedHost()
-                .equals(Constants.DEFAULT_HOST))
-                   ? InetAddress.getLocalHost()
-                           .getCanonicalHostName()
-                   : serviceDiscoveryConfiguration.getPublishedHost();
+        val host = serviceDiscoveryConfiguration.getNonEmptyPublishedHost();
 
         val publishedHostAddress = InetAddress.getByName(host)
                 .getHostAddress();

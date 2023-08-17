@@ -23,6 +23,8 @@ import static io.appform.dropwizard.discovery.bundle.Constants.ZOOKEEPER_HOST_DE
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Strings;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -93,6 +95,15 @@ public class ServiceDiscoveryConfiguration {
                 .map(zkHostPort -> zkHostPort.split(HOST_PORT_DELIMITER)[0])
                 .map(zkHostPath -> zkHostPath.split(PATH_DELIMITER)[0])
                 .collect(Collectors.toSet());
+    }
+
+    @JsonIgnore
+    public String getNonEmptyPublishedHost() throws UnknownHostException {
+        if (Strings.isNullOrEmpty(publishedHost) || publishedHost.equals(Constants.DEFAULT_HOST)) {
+            return InetAddress.getLocalHost()
+                    .getCanonicalHostName();
+        }
+        return publishedHost;
     }
 
     @Builder
