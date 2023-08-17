@@ -23,7 +23,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import io.appform.dropwizard.discovery.bundle.healthchecks.InitialDelayChecker;
 import io.appform.dropwizard.discovery.bundle.healthchecks.InternalHealthChecker;
@@ -42,6 +41,7 @@ import io.appform.dropwizard.discovery.bundle.rotationstatus.DropwizardServerSta
 import io.appform.dropwizard.discovery.bundle.rotationstatus.OORTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.RotationStatus;
 import io.appform.dropwizard.discovery.bundle.selectors.HierarchicalEnvironmentAwareShardSelector;
+import io.appform.dropwizard.discovery.bundle.util.ConfigurationUtils;
 import io.appform.ranger.client.RangerClient;
 import io.appform.ranger.client.zk.SimpleRangerZKClient;
 import io.appform.ranger.common.server.ShardInfo;
@@ -62,13 +62,9 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -195,17 +191,12 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
     protected String getHost() throws UnknownHostException {
-        val host = (Strings.isNullOrEmpty(serviceDiscoveryConfiguration.getPublishedHost())
-                || serviceDiscoveryConfiguration.getPublishedHost()
-                .equals(Constants.DEFAULT_HOST))
-                   ? InetAddress.getLocalHost()
-                           .getCanonicalHostName()
-                   : serviceDiscoveryConfiguration.getPublishedHost();
+        val host = ConfigurationUtils.resolveNonEmptyPublishedHost(serviceDiscoveryConfiguration.getPublishedHost());
 
         val publishedHostAddress = InetAddress.getByName(host)
                 .getHostAddress();
 
-        val zkHostAddresses = serviceDiscoveryConfiguration.getZookeeperHosts()
+        val zkHostAddresses = ConfigurationUtils.resolveZookeeperHosts(serviceDiscoveryConfiguration.getZookeeper())
                 .stream()
                 .map(zkHost -> {
                     try {

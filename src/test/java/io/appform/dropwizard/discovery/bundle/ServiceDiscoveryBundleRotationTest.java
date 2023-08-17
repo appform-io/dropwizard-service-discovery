@@ -34,6 +34,7 @@ import com.google.common.collect.Lists;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.BIRTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.OORTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.RotationStatus;
+import io.appform.dropwizard.discovery.bundle.util.ConfigurationUtils;
 import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
@@ -116,7 +117,7 @@ class ServiceDiscoveryBundleRotationTest {
                 .build();
 
         DnsCacheManipulator.setDnsCache("TestHost", "127.0.0.1");
-        serviceDiscoveryConfiguration.getZookeeperHosts()
+        ConfigurationUtils.resolveZookeeperHosts(serviceDiscoveryConfiguration.getZookeeper())
                 .forEach(zkHost -> {
                     DnsCacheManipulator.setDnsCache(zkHost, "127.0.0.1");
                 });

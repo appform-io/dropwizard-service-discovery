@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.appform.dropwizard.discovery.bundle.resolvers.DefaultNodeInfoResolver;
 import io.appform.dropwizard.discovery.bundle.resolvers.NodeInfoResolver;
+import io.appform.dropwizard.discovery.bundle.util.ConfigurationUtils;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
@@ -119,7 +120,7 @@ class ServiceDiscoveryBundleTest {
                 .build();
 
         DnsCacheManipulator.setDnsCache("TestHost", "127.0.0.1");
-        serviceDiscoveryConfiguration.getZookeeperHosts()
+        ConfigurationUtils.resolveZookeeperHosts(serviceDiscoveryConfiguration.getZookeeper())
                 .forEach(zkHost -> {
                     DnsCacheManipulator.setDnsCache(zkHost, "127.0.0.1");
                 });
