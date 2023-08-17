@@ -18,7 +18,6 @@
 package io.appform.dropwizard.discovery.bundle;
 
 import static io.appform.dropwizard.discovery.bundle.Constants.LOCAL_ADDRESSES;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,6 +29,7 @@ import com.alibaba.dcm.DnsCacheManipulator;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.appform.dropwizard.discovery.bundle.util.ConfigurationUtils;
 import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
@@ -169,7 +169,8 @@ class ServiceDiscoveryBundleLocalHostPortTest {
                 .build();
         bundle.initialize(bootstrap);
 
-        String publishedHost = serviceDiscoveryConfiguration.getNonEmptyPublishedHost();
+        String publishedHost = ConfigurationUtils.resolveNonEmptyPublishedHost(
+                serviceDiscoveryConfiguration.getPublishedHost());
         if (LOCAL_ADDRESSES.contains(publishedHost)) {
             assertLocalHostNotAllowed();
         } else {
@@ -202,7 +203,8 @@ class ServiceDiscoveryBundleLocalHostPortTest {
                 .build();
         bundle.initialize(bootstrap);
 
-        String publishedHost = serviceDiscoveryConfiguration.getNonEmptyPublishedHost();
+        String publishedHost = ConfigurationUtils.resolveNonEmptyPublishedHost(
+                serviceDiscoveryConfiguration.getPublishedHost());
         if (LOCAL_ADDRESSES.contains(publishedHost)) {
             assertLocalHostNotAllowed();
         } else {

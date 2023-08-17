@@ -17,17 +17,8 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
-import static io.appform.dropwizard.discovery.bundle.Constants.HOST_PORT_DELIMITER;
-import static io.appform.dropwizard.discovery.bundle.Constants.PATH_DELIMITER;
-import static io.appform.dropwizard.discovery.bundle.Constants.ZOOKEEPER_HOST_DELIMITER;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Strings;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
@@ -88,23 +79,6 @@ public class ServiceDiscoveryConfiguration {
     private int dropwizardCheckStaleness;
 
     private Set<String> tags;
-
-    @JsonIgnore
-    public Set<String> getZookeeperHosts() {
-        return Arrays.stream(zookeeper.split(ZOOKEEPER_HOST_DELIMITER))
-                .map(zkHostPort -> zkHostPort.split(HOST_PORT_DELIMITER)[0])
-                .map(zkHostPath -> zkHostPath.split(PATH_DELIMITER)[0])
-                .collect(Collectors.toSet());
-    }
-
-    @JsonIgnore
-    public String getNonEmptyPublishedHost() throws UnknownHostException {
-        if (Strings.isNullOrEmpty(publishedHost) || publishedHost.equals(Constants.DEFAULT_HOST)) {
-            return InetAddress.getLocalHost()
-                    .getCanonicalHostName();
-        }
-        return publishedHost;
-    }
 
     @Builder
     public ServiceDiscoveryConfiguration(String namespace,

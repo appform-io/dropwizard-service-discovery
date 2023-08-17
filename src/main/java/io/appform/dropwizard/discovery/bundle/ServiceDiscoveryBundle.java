@@ -41,6 +41,7 @@ import io.appform.dropwizard.discovery.bundle.rotationstatus.DropwizardServerSta
 import io.appform.dropwizard.discovery.bundle.rotationstatus.OORTask;
 import io.appform.dropwizard.discovery.bundle.rotationstatus.RotationStatus;
 import io.appform.dropwizard.discovery.bundle.selectors.HierarchicalEnvironmentAwareShardSelector;
+import io.appform.dropwizard.discovery.bundle.util.ConfigurationUtils;
 import io.appform.ranger.client.RangerClient;
 import io.appform.ranger.client.zk.SimpleRangerZKClient;
 import io.appform.ranger.common.server.ShardInfo;
@@ -190,12 +191,12 @@ public abstract class ServiceDiscoveryBundle<T extends Configuration> implements
     }
 
     protected String getHost() throws UnknownHostException {
-        val host = serviceDiscoveryConfiguration.getNonEmptyPublishedHost();
+        val host = ConfigurationUtils.resolveNonEmptyPublishedHost(serviceDiscoveryConfiguration.getPublishedHost());
 
         val publishedHostAddress = InetAddress.getByName(host)
                 .getHostAddress();
 
-        val zkHostAddresses = serviceDiscoveryConfiguration.getZookeeperHosts()
+        val zkHostAddresses = ConfigurationUtils.resolveZookeeperHosts(serviceDiscoveryConfiguration.getZookeeper())
                 .stream()
                 .map(zkHost -> {
                     try {

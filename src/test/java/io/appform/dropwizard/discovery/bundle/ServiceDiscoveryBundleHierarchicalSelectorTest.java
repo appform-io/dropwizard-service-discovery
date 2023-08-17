@@ -31,6 +31,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import io.appform.dropwizard.discovery.bundle.util.ConfigurationUtils;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.dropwizard.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
@@ -113,7 +114,7 @@ class ServiceDiscoveryBundleHierarchicalSelectorTest {
                 .publishedPort(8021)
                 .initialRotationStatus(true)
                 .build();
-        serviceDiscoveryConfiguration.getZookeeperHosts()
+        ConfigurationUtils.resolveZookeeperHosts(serviceDiscoveryConfiguration.getZookeeper())
                 .forEach(zkHost -> {
                     DnsCacheManipulator.setDnsCache(zkHost, "127.0.0.1");
                 });
