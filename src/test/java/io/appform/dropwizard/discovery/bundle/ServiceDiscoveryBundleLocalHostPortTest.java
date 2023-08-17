@@ -179,7 +179,7 @@ class ServiceDiscoveryBundleLocalHostPortTest {
     }
 
     @Test
-    public void testPublishWithNullZkHost() throws UnknownHostException {
+    void testPublishWithNullZkHost() throws UnknownHostException {
         DnsCacheManipulator.setDnsCache("myzookeeper", "19.10.1.1");
         DnsCacheManipulator.setDnsCache("myfavzookeeper", "127.0.0.1");
         DnsCacheManipulator.setDnsCache("custom-host", "127.0.0.1");
