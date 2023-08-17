@@ -116,7 +116,7 @@
         <curator.version>4.2.0</curator.version>
         <failsafe.version>3.2.4</failsafe.version>
         <curator.version>5.1.0</curator.version>
-        <jackson.version>2.13.4</jackson.version>
+        <jackson.version>2.13.4.2</jackson.version>
         <mockito.version>4.2.0</mockito.version>
         <sonar.organization>appform-io</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
