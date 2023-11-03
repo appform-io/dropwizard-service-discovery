@@ -7,7 +7,7 @@
     <groupId>io.appform.dropwizard.discovery</groupId>
     <artifactId>dropwizard-service-discovery</artifactId>
     <packaging>jar</packaging>
-    <version>2.0.28-8</version>
+    <version>2.0.28-9</version>
 
     <name>Dropwizard Service Discovery</name>
     <url>https://github.com/santanusinha/dropwizard-service-discovery</url>
@@ -112,7 +112,7 @@
         <lombok.version>1.18.24</lombok.version>
         <guava.version>30.1.1-jre</guava.version>
         <junit.version>5.8.2</junit.version>
-        <ranger.version>1.0-RC10</ranger.version>
+        <ranger.version>1.0-RC13</ranger.version>
         <curator.version>4.2.0</curator.version>
         <failsafe.version>3.2.4</failsafe.version>
         <curator.version>5.1.0</curator.version>
@@ -122,7 +122,7 @@
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <awaitility.version>4.2.0</awaitility.version>
         <logback.version>1.2.10</logback.version>
-        <dns.cache.manipulator.version>1.7.2</dns.cache.manipulator.version>
+        <dns.cache.manipulator.version>1.8.1</dns.cache.manipulator.version>
     </properties>
 
     <dependencyManagement>
@@ -419,12 +419,13 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.7</version>
+                        <version>1.6.13</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>
                             <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
                             <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                            <stagingProgressTimeoutMinutes>10</stagingProgressTimeoutMinutes>
                         </configuration>
                     </plugin>
                     <plugin>

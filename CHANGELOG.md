@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [2.0.28-9]
+- Updated ranger version
+
 ## [2.0.28-8]
 - Refactored to get and test non-empty published host from service discovery configuration
 
