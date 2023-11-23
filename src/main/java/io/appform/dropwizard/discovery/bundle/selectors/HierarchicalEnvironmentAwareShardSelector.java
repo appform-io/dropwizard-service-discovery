@@ -112,7 +112,7 @@ public class HierarchicalEnvironmentAwareShardSelector implements ShardSelector<
                 }
                 log.debug("Effective environment for discovery is {}", remainingEnvironment);
                 val shardInfo = new IterableEnvironment(remainingEnvironment, separator);
-                val sepIndex = remainingEnvironment.indexOf(this.separator);
+                val sepIndex = remainingEnvironment.lastIndexOf(this.separator);
                 remainingEnvironment = sepIndex < 0
                                        ? ""
                                        : remainingEnvironment.substring(0, sepIndex);
