@@ -21,11 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.doReturn;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 import io.appform.ranger.common.server.ShardInfo;
 import io.appform.ranger.core.finder.serviceregistry.MapBasedServiceRegistry;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.appform.ranger.core.model.Service;
 import io.appform.ranger.core.model.ServiceNode;
+import java.util.List;
 import java.util.UUID;
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
@@ -146,5 +148,65 @@ class HierarchicalEnvironmentAwareShardSelectorTest {
         assertEquals(1, nodes.size());
         assertEquals("host2", nodes.get(0).getHost());
         assertEquals(9999, nodes.get(0).getPort());
+    }
+
+    @Test
+    void testChildNodesAvailableForParentEnv() {
+        val serviceName = UUID.randomUUID().toString();
+        val service = Mockito.mock(Service.class);
+        doReturn(serviceName).when(service).getServiceName();
+        doReturn(service).when(serviceRegistry).getService();
+
+        // service in env: x.y.z should be able to discover service in env: x
+        ListMultimap<ShardInfo, ServiceNode<ShardInfo>> serviceNodes = ArrayListMultimap.create();
+        serviceNodes.put(
+                ShardInfo.builder().environment("x").build(),
+                new ServiceNode<>("host1",
+                        8888,
+                        ShardInfo.builder().environment("x").build(),
+                        HealthcheckStatus.healthy,
+                        System.currentTimeMillis(),
+                        "http"));
+        doReturn(serviceNodes).when(serviceRegistry).nodes();
+
+        List<ServiceNode<ShardInfo>> nodes = selector("x.y.z").nodes(null, serviceRegistry);
+        assertEquals(1, nodes.size());
+        assertEquals("host1", nodes.get(0).getHost());
+        assertEquals(8888, nodes.get(0).getPort());
+
+        // service in env: x.y.z should be able to discover service in env: x.y
+        serviceNodes = ArrayListMultimap.create();
+        serviceNodes.put(
+                ShardInfo.builder().environment("x.y").build(),
+                new ServiceNode<>("host2",
+                        9999,
+                        ShardInfo.builder().environment("x.y").build(),
+                        HealthcheckStatus.healthy,
+                        System.currentTimeMillis(),
+                        "http"));
+        doReturn(serviceNodes).when(serviceRegistry).nodes();
+
+        nodes = selector("x.y.z").nodes(null, serviceRegistry);
+        assertEquals(1, nodes.size());
+        assertEquals("host2", nodes.get(0).getHost());
+        assertEquals(9999, nodes.get(0).getPort());
+
+        // service in env: x.y.z should be able to discover service in env: x
+        serviceNodes = ArrayListMultimap.create();
+        serviceNodes.put(
+                ShardInfo.builder().environment("x").build(),
+                new ServiceNode<>("host3",
+                        9999,
+                        ShardInfo.builder().environment("x").build(),
+                        HealthcheckStatus.healthy,
+                        System.currentTimeMillis(),
+                        "http"));
+        doReturn(serviceNodes).when(serviceRegistry).nodes();
+
+        nodes = selector("x.y.z").nodes(null, serviceRegistry);
+        assertEquals(1, nodes.size());
+        assertEquals("host3", nodes.get(0).getHost());
+        assertEquals(9999, nodes.get(0).getPort());
+
     }
 }
