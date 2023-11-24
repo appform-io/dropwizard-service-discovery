@@ -17,14 +17,6 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
-import static io.appform.dropwizard.discovery.bundle.Constants.LOCAL_ADDRESSES;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.alibaba.dcm.DnsCacheManipulator;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
@@ -37,12 +29,21 @@ import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
 import io.dropwizard.setup.AdminEnvironment;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-import java.net.UnknownHostException;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.UUID;
+
+import static io.appform.dropwizard.discovery.bundle.Constants.LOCAL_ADDRESSES;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 
 @Slf4j
@@ -169,9 +170,10 @@ class ServiceDiscoveryBundleLocalHostPortTest {
                 .build();
         bundle.initialize(bootstrap);
 
-        String publishedHost = ConfigurationUtils.resolveNonEmptyPublishedHost(
+        val publishedHost = ConfigurationUtils.resolveNonEmptyPublishedHost(
                 serviceDiscoveryConfiguration.getPublishedHost());
-        if (LOCAL_ADDRESSES.contains(publishedHost)) {
+        val publishedHostAddress = InetAddress.getByName(publishedHost).getHostAddress();
+        if (LOCAL_ADDRESSES.contains(publishedHostAddress) || LOCAL_ADDRESSES.contains(publishedHost)) {
             assertLocalHostNotAllowed();
         } else {
             assertDoesNotThrow();
@@ -203,9 +205,10 @@ class ServiceDiscoveryBundleLocalHostPortTest {
                 .build();
         bundle.initialize(bootstrap);
 
-        String publishedHost = ConfigurationUtils.resolveNonEmptyPublishedHost(
+        val publishedHost = ConfigurationUtils.resolveNonEmptyPublishedHost(
                 serviceDiscoveryConfiguration.getPublishedHost());
-        if (LOCAL_ADDRESSES.contains(publishedHost)) {
+        val publishedHostAddress = InetAddress.getByName(publishedHost).getHostAddress();
+        if (LOCAL_ADDRESSES.contains(publishedHostAddress) || LOCAL_ADDRESSES.contains(publishedHost)) {
             assertLocalHostNotAllowed();
         } else {
             assertDoesNotThrow();
