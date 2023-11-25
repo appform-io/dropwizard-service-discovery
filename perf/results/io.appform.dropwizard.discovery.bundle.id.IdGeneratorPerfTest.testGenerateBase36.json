@@ -4,5 +4,5 @@
   "iterations" : 4,
   "threads" : 1,
   "forks" : 3,
-  "mean_ops" : 344074.5763736405
+  "mean_ops" : 341625.83898718463
 }
