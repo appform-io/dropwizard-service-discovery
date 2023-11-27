@@ -18,7 +18,6 @@
 package io.appform.dropwizard.discovery.bundle.id.constraints.impl;
 
 import io.appform.dropwizard.discovery.bundle.id.Id;
-import lombok.var;
 
 /**
  *
