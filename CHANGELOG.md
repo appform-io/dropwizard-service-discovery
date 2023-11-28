@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 ## [2.0.28-11]
+- Java version upgrade to 17 (-releasse 11) and dropwizard version upgraded to 2.1.10
+
+## [2.0.28-11]
 - Fixed hierarchical environment aware shard selector  : If a service  is deployed with environment :  env.x.y.z then it should be able to discover other services  present in enviroment -  [env , env.x , env.x.y, env.x.y.z ]
 
 ## [2.0.28-10]
