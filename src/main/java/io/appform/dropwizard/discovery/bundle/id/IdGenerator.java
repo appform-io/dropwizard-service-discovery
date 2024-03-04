@@ -166,8 +166,8 @@ public class IdGenerator {
     }
 
     private static Id generate(final String prefix,
-                              final IdFormatter idFormatter,
-                              CollisionChecker collisionChecker) {
+                               final IdFormatter idFormatter,
+                               final CollisionChecker collisionChecker) {
         val idInfo = random(collisionChecker);
         val dateTime = new DateTime(idInfo.time);
         val id = String.format("%s%s", prefix, idFormatter.format(dateTime, nodeId, idInfo.exponent));
