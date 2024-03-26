@@ -34,10 +34,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -56,7 +56,7 @@ public class IdGenerator {
     private static final SecureRandom SECURE_RANDOM = new SecureRandom(Long.toBinaryString(System.currentTimeMillis()).getBytes());
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormat.forPattern("yyMMddHHmmssSSS");
 
-    private static final Map<String, CollisionChecker> DOMAIN_COLLISION_CHECKERS = new HashMap<>();
+    private static final Map<String, Domain> REGISTERED_DOMAINS = new HashMap<>();
     private static final CollisionChecker DEFAULT_COLLISION_CHECKER = new CollisionChecker();
     private static final RetryPolicy<GenerationResult> RETRY_POLICY = RetryPolicy.<GenerationResult>builder()
             .withMaxAttempts(readRetryCount())
@@ -69,7 +69,7 @@ public class IdGenerator {
                     val id = res.getId();
                     CollisionChecker collisionChecker = res.getDomain() == null
                             ? DEFAULT_COLLISION_CHECKER
-                            : DOMAIN_COLLISION_CHECKERS.getOrDefault(res.getDomain(), DEFAULT_COLLISION_CHECKER);
+                            : REGISTERED_DOMAINS.get(res.getDomain()).getCollisionChecker();
                     collisionChecker.free(id.getGeneratedDate().getTime(), id.getExponent());
                 }
             })
@@ -79,7 +79,6 @@ public class IdGenerator {
     private static final Pattern PATTERN = Pattern.compile("(.*)([0-9]{15})([0-9]{4})([0-9]{3})");
 
     private static final List<IdValidationConstraint> GLOBAL_CONSTRAINTS = new ArrayList<>();
-    private static final Map<String, List<IdValidationConstraint>> DOMAIN_SPECIFIC_CONSTRAINTS = new HashMap<>();
     private static int nodeId;
 
     public static void initialize(int node) {
@@ -88,33 +87,31 @@ public class IdGenerator {
 
     public static synchronized void cleanUp() {
         GLOBAL_CONSTRAINTS.clear();
-        DOMAIN_SPECIFIC_CONSTRAINTS.clear();
-        DOMAIN_COLLISION_CHECKERS.clear();
+        REGISTERED_DOMAINS.clear();
     }
 
     public static synchronized void initialize(
             int node, List<IdValidationConstraint> globalConstraints,
             Map<String, List<IdValidationConstraint>> domainSpecificConstraints) {
-        initialize(node, globalConstraints, domainSpecificConstraints, Collections.emptyMap());
-    }
-
-
-    public static synchronized void initialize(
-            int node, List<IdValidationConstraint> globalConstraints,
-            Map<String, List<IdValidationConstraint>> domainSpecificConstraints,
-            Map<String, TimeUnit> domainSpecificResolutions) {
         nodeId = node;
         if(null != globalConstraints) {
             IdGenerator.GLOBAL_CONSTRAINTS.addAll(globalConstraints);
         }
+
         if(null != domainSpecificConstraints) {
-            IdGenerator.DOMAIN_SPECIFIC_CONSTRAINTS.putAll(domainSpecificConstraints);
-        }
-        if (null != domainSpecificResolutions) {
-            IdGenerator.DOMAIN_COLLISION_CHECKERS.putAll(domainSpecificResolutions.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, entry -> new CollisionChecker(entry.getValue()))));
+            REGISTERED_DOMAINS.putAll(domainSpecificConstraints.entrySet().stream()
+                    .map(entry -> Domain.builder()
+                            .domain(entry.getKey())
+                            .constraints(entry.getValue())
+                            .build())
+                    .collect(Collectors.toMap(Domain::getDomain, domain -> domain)));
         }
     }
+
+    public static void registerDomain(Domain domain) {
+        REGISTERED_DOMAINS.put(domain.getDomain(), domain);
+    }
+
 
     public static synchronized void registerGlobalConstraints(IdValidationConstraint... constraints) {
         registerGlobalConstraints(ImmutableList.copyOf(constraints));
@@ -135,18 +132,10 @@ public class IdGenerator {
             String domain,
             List<IdValidationConstraint> validationConstraints) {
         Preconditions.checkArgument(null != validationConstraints && !validationConstraints.isEmpty());
-        DOMAIN_SPECIFIC_CONSTRAINTS.computeIfAbsent(domain, key -> new ArrayList<>())
-                .addAll(validationConstraints);
-    }
-
-    public static synchronized void registerDomainSpecificConstraints(
-            String domain,
-            List<IdValidationConstraint> validationConstraints,
-            TimeUnit resolution) {
-        Preconditions.checkArgument(null != validationConstraints && !validationConstraints.isEmpty());
-        DOMAIN_SPECIFIC_CONSTRAINTS.computeIfAbsent(domain, key -> new ArrayList<>())
-                .addAll(validationConstraints);
-        DOMAIN_COLLISION_CHECKERS.computeIfAbsent(domain, key -> new CollisionChecker(resolution));
+        REGISTERED_DOMAINS.computeIfAbsent(domain, key -> Domain.builder()
+                .domain(domain)
+                .constraints(validationConstraints)
+                .build());
     }
 
 
@@ -190,8 +179,11 @@ public class IdGenerator {
      * @param domain Domain for constraint selection
      * @return Return generated id or empty if it was impossible to satisfy constraints and generate
      */
-    public static Optional<Id> generateWithConstraints(String prefix, String domain) {
-        return generateWithConstraints(prefix, domain, DOMAIN_SPECIFIC_CONSTRAINTS.getOrDefault(domain, Collections.emptyList()), true);
+    public static Optional<Id> generateWithConstraints(String prefix, @NonNull String domain) {
+        if (!REGISTERED_DOMAINS.containsKey(domain)) {
+            throw new RuntimeException(String.format("Domain %s is not yet registered", domain));
+        }
+        return generateWithConstraints(prefix, REGISTERED_DOMAINS.get(domain), true);
     }
 
     /**
@@ -204,8 +196,12 @@ public class IdGenerator {
      * @param skipGlobal Skip global constrains and use only passed ones
      * @return Id if it could be generated
      */
-    public static Optional<Id> generateWithConstraints(String prefix, String domain, boolean skipGlobal) {
-        return generateWithConstraints(prefix, domain, DOMAIN_SPECIFIC_CONSTRAINTS.getOrDefault(domain, Collections.emptyList()), skipGlobal);
+    public static Optional<Id> generateWithConstraints(String prefix, @NonNull String domain, boolean skipGlobal) {
+        if (!REGISTERED_DOMAINS.containsKey(domain)) {
+            throw new RuntimeException(String.format("Domain %s is not yet registered", domain));
+        }
+
+        return generateWithConstraints(prefix, REGISTERED_DOMAINS.get(domain), skipGlobal);
     }
 
     /**
@@ -275,19 +271,19 @@ public class IdGenerator {
      * The evaluation of constraints will take it's toll on id generation rates. Tun rests to check speed.
      *
      * @param prefix        String prefix
-     * @param inConstraints Constraints that need to be validate.
      * @param skipGlobal    Skip global constrains and use only passed ones
      * @param domain        Domain
      * @return Id if it could be generated
      */
-    public static Optional<Id> generateWithConstraints(String prefix, String domain,
-                                                       final List<IdValidationConstraint> inConstraints, boolean skipGlobal) {
+    public static Optional<Id> generateWithConstraints(String prefix,
+                                                       final Domain domain,
+                                                       boolean skipGlobal) {
         return generate(IdGenerationRequest.builder()
                 .prefix(prefix)
-                .constraints(inConstraints)
+                .constraints(domain.getConstraints())
                 .skipGlobal(skipGlobal)
-                .domain(domain)
-                .idFormatter(IdFormatters.original())
+                .domain(domain.getDomain())
+                .idFormatter(domain.getIdFormatter())
                 .build());
     }
 
@@ -295,7 +291,7 @@ public class IdGenerator {
         return Optional.ofNullable(RETRIER.get(
                         () -> {
                             Id id = generate(request.getPrefix(), request.getIdFormatter(), request.getDomain() != null
-                                    ? DOMAIN_COLLISION_CHECKERS.getOrDefault(request.getDomain(), DEFAULT_COLLISION_CHECKER)
+                                    ? REGISTERED_DOMAINS.get(request.getDomain()).getCollisionChecker()
                                     : DEFAULT_COLLISION_CHECKER);
                             return new GenerationResult(id,
                                     validateId(request.getConstraints(), id, request.isSkipGlobal()), request.getDomain());
