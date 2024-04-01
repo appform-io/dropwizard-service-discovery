@@ -7,36 +7,32 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Getter
 public class Domain {
 
-    @NonNull
     private final String domain;
-
-    @Builder.Default
-    private List<IdValidationConstraint> constraints = new ArrayList<>();
-
-    @Builder.Default
-    private IdFormatter idFormatter = IdFormatters.original();
-
-    @Builder.Default
-    private final TimeUnit resolution = TimeUnit.MILLISECONDS;
-
+    private final List<IdValidationConstraint> constraints;
+    private final IdFormatter idFormatter;
     private final CollisionChecker collisionChecker;
+
 
     @Builder
     public Domain(@NonNull String domain,
                   @NonNull List<IdValidationConstraint> constraints,
-                  @NonNull IdFormatter idFormatter,
-                  @NonNull TimeUnit resolution) {
+                  IdFormatter idFormatter,
+                  TimeUnit resolution) {
         this.domain = domain;
         this.constraints = constraints;
-        this.idFormatter = idFormatter;
-        this.collisionChecker = new CollisionChecker(resolution);
+        this.idFormatter = Objects.isNull(idFormatter)
+                ? IdFormatters.original()
+                : idFormatter;
+        this.collisionChecker = Objects.isNull(resolution)
+                ? new CollisionChecker(TimeUnit.MILLISECONDS)
+                : new CollisionChecker(resolution);
     }
 
 }
