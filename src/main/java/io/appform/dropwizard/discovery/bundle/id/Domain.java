@@ -31,8 +31,8 @@ public class Domain {
     @Builder
     public Domain(@NonNull String domain,
                   @NonNull List<IdValidationConstraint> constraints,
-                  IdFormatter idFormatter,
-                  TimeUnit resolution) {
+                  @NonNull IdFormatter idFormatter,
+                  @NonNull TimeUnit resolution) {
         this.domain = domain;
         this.constraints = constraints;
         this.idFormatter = idFormatter;

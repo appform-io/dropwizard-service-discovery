@@ -21,6 +21,8 @@ import java.util.BitSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -36,10 +38,10 @@ public class CollisionChecker {
     private final TimeUnit resolution;
 
     public CollisionChecker() {
-        this.resolution = TimeUnit.MILLISECONDS;
+        this(TimeUnit.MILLISECONDS);
     }
 
-    public CollisionChecker(TimeUnit resolution) {
+    public CollisionChecker(@NonNull TimeUnit resolution) {
         this.resolution = resolution;
     }
 

@@ -180,10 +180,9 @@ public class IdGenerator {
      * @return Return generated id or empty if it was impossible to satisfy constraints and generate
      */
     public static Optional<Id> generateWithConstraints(String prefix, @NonNull String domain) {
-        if (!REGISTERED_DOMAINS.containsKey(domain)) {
-            throw new RuntimeException(String.format("Domain %s is not yet registered", domain));
-        }
-        return generateWithConstraints(prefix, REGISTERED_DOMAINS.get(domain), true);
+        return REGISTERED_DOMAINS.containsKey(domain)
+                ? generateWithConstraints(prefix, REGISTERED_DOMAINS.get(domain), true)
+                : generateWithConstraints(prefix, Collections.emptyList(), true);
     }
 
     /**
@@ -197,11 +196,9 @@ public class IdGenerator {
      * @return Id if it could be generated
      */
     public static Optional<Id> generateWithConstraints(String prefix, @NonNull String domain, boolean skipGlobal) {
-        if (!REGISTERED_DOMAINS.containsKey(domain)) {
-            throw new RuntimeException(String.format("Domain %s is not yet registered", domain));
-        }
-
-        return generateWithConstraints(prefix, REGISTERED_DOMAINS.get(domain), skipGlobal);
+        return REGISTERED_DOMAINS.containsKey(domain)
+                ? generateWithConstraints(prefix, REGISTERED_DOMAINS.get(domain), skipGlobal)
+                : generateWithConstraints(prefix, Collections.emptyList(), skipGlobal);
     }
 
     /**
@@ -275,9 +272,9 @@ public class IdGenerator {
      * @param domain        Domain
      * @return Id if it could be generated
      */
-    public static Optional<Id> generateWithConstraints(String prefix,
-                                                       final Domain domain,
-                                                       boolean skipGlobal) {
+    private static Optional<Id> generateWithConstraints(String prefix,
+                                                        final Domain domain,
+                                                        boolean skipGlobal) {
         return generate(IdGenerationRequest.builder()
                 .prefix(prefix)
                 .constraints(domain.getConstraints())
