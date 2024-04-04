@@ -181,8 +181,8 @@ public class IdGenerator {
      */
     public static Optional<Id> generateWithConstraints(String prefix, @NonNull String domain) {
         return REGISTERED_DOMAINS.containsKey(domain)
-                ? generateWithConstraints(prefix, REGISTERED_DOMAINS.get(domain), true)
-                : generateWithConstraints(prefix, Collections.emptyList(), true);
+                ? generateWithConstraints(prefix, REGISTERED_DOMAINS.get(domain), false)
+                : generateWithConstraints(prefix, Collections.emptyList());
     }
 
     /**
