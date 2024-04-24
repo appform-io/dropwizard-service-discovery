@@ -18,8 +18,11 @@
 package io.appform.dropwizard.discovery.bundle.id;
 
 import java.util.BitSet;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -32,15 +35,22 @@ public class CollisionChecker {
 
     private final Lock dataLock = new ReentrantLock();
 
+    private final TimeUnit resolution;
+
     public CollisionChecker() {
-        //Nothing to do here
+        this(TimeUnit.MILLISECONDS);
     }
 
-    public boolean check(long time, int location) {
+    public CollisionChecker(@NonNull TimeUnit resolution) {
+        this.resolution = resolution;
+    }
+
+    public boolean check(long timeInMillis, int location) {
         dataLock.lock();
         try {
-            if (currentInstant != time) {
-                currentInstant = time;
+            long resolvedTime = resolution.convert(timeInMillis, TimeUnit.MILLISECONDS);;
+            if (currentInstant != resolvedTime) {
+                currentInstant = resolvedTime;
                 bitSet.clear();
             }
 

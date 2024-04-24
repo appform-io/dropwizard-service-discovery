@@ -17,13 +17,15 @@
 
 package io.appform.dropwizard.discovery.bundle;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+
 
 import io.dropwizard.Configuration;
 import java.time.Duration;
 import lombok.experimental.UtilityClass;
 import org.awaitility.Awaitility;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  *

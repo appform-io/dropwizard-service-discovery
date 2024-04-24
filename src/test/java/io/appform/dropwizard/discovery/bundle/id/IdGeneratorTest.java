@@ -29,6 +29,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -114,6 +115,34 @@ class IdGeneratorTest {
         IdGenerator.initialize(23);
         String id = IdGenerator.generate("TEST", IdFormatters.base36()).getId();
         Assertions.assertEquals(18, id.length());
+    }
+
+    @Test
+    void testGenerateWithConstraints() {
+        IdGenerator.initialize(23, Collections.emptyList(), Map.of("TEST", Collections.emptyList()));
+        Optional<Id> id = IdGenerator.generateWithConstraints("TEST", "TEST");
+
+        Assertions.assertTrue(id.isPresent());
+        Assertions.assertEquals(26, id.get().getId().length());
+
+        // Unregistered Domain
+        id = IdGenerator.generateWithConstraints("TEST", "TEST1");
+        Assertions.assertTrue(id.isPresent());
+        Assertions.assertEquals(26, id.get().getId().length());
+    }
+
+    @Test
+    void testGenerateWithConstraintsFailedWithLocalConstraint() {
+        IdGenerator.initialize(23, Collections.emptyList(), Map.of("TEST", Collections.singletonList(id -> false)));
+        Optional<Id> id = IdGenerator.generateWithConstraints("TEST", "TEST");
+        Assertions.assertFalse(id.isPresent());
+    }
+
+    @Test
+    void testGenerateWithConstraintsFailedWithGlobalConstraint() {
+        IdGenerator.initialize(23,  Collections.singletonList(id -> false), Map.of("TEST", Collections.singletonList(id -> false)));
+        Optional<Id> id = IdGenerator.generateWithConstraints("TEST", "TEST", false);
+        Assertions.assertFalse(id.isPresent());
     }
 
 
