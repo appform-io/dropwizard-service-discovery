@@ -1,5 +1,4 @@
-# Dropwizard Service Discovery [![Build](https://github.com/appform-io/dropwizard-service-discovery/actions/workflows/build.yml/badge.svg)](https://github.com/appform-io/dropwizard-service-discovery/actions/workflows/build.yml)
-
+# Dropwizard Service Discovery [![Build](https://github.com/appform-io/dropwizard-service-discovery/actions/workflows/merge-update.yml/badge.svg)](https://github.com/appform-io/dropwizard-service-discovery/actions/workflows/merge-update.yml)
 Provides service discovery to dropwizard services. It uses [Ranger](https://github.com/flipkart-incubator/ranger) for service discovery.
 
 ## Dependency for bundle
