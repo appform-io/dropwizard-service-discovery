@@ -1,6 +1,7 @@
 package io.appform.dropwizard.discovery.bundle.id;
 
 import io.appform.dropwizard.discovery.bundle.id.constraints.IdValidationConstraint;
+import io.appform.dropwizard.discovery.bundle.id.formatter.DefaultIdFormatter;
 import io.appform.dropwizard.discovery.bundle.id.formatter.IdFormatter;
 import io.appform.dropwizard.discovery.bundle.id.formatter.IdFormatters;
 import lombok.Builder;
@@ -13,6 +14,11 @@ import java.util.concurrent.TimeUnit;
 
 @Getter
 public class Domain {
+    public static final String DEFAULT_DOMAIN_NAME = "__DEFAULT_DOMAIN__";
+    public static final Domain DEFAULT = new Domain(DEFAULT_DOMAIN_NAME,
+                                                    List.of(),
+                                                    new DefaultIdFormatter(),
+                                                    TimeUnit.MILLISECONDS);
 
     private final String domain;
     private final List<IdValidationConstraint> constraints;
@@ -27,12 +33,8 @@ public class Domain {
                   TimeUnit resolution) {
         this.domain = domain;
         this.constraints = constraints;
-        this.idFormatter = Objects.isNull(idFormatter)
-                ? IdFormatters.original()
-                : idFormatter;
-        this.collisionChecker = Objects.isNull(resolution)
-                ? new CollisionChecker(TimeUnit.MILLISECONDS)
-                : new CollisionChecker(resolution);
+        this.idFormatter = Objects.requireNonNullElse(idFormatter, IdFormatters.original());
+        this.collisionChecker = new CollisionChecker(Objects.requireNonNullElse(resolution, TimeUnit.MILLISECONDS));
     }
 
 }

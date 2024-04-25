@@ -1,4 +1,4 @@
-name: Build
+name: Build PR branch
 on:
   push:
     branches:
@@ -14,16 +14,12 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
           token: ${{ secrets.ACTION_PUSH_TOKEN }}
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
         with:
-          java-version: 11
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
+          java-version: 17
+          cache: maven
+          distribution: 'temurin'
       - name: Cache Maven packages
         uses: actions/cache@v1
         with:
@@ -31,11 +27,5 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Build and analyze
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=appform-io_dropwizard-service-discovery
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: Comitting files changed by Github Actions
-          commit_options: '--no-verify --signoff'
+        run: mvn -B clean verify
+
