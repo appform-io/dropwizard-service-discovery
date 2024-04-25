@@ -1,13 +1,10 @@
 name: Build PR branch
 on:
-  push:
-    branches:
-      - master
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:
   build:
-    name: Build
+    name: Build And Run Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
