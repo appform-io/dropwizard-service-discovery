@@ -23,6 +23,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.time.ZonedDateTime;
+
 /**
  * A representation of an ID
  */
@@ -33,7 +35,7 @@ import lombok.ToString;
 @ToString
 public class Id {
     private String id;
-    private long millis;
+    private ZonedDateTime date;
     private int node;
     private int exponent;
 }

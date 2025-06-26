@@ -34,6 +34,7 @@ import lombok.val;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -74,7 +75,7 @@ public class IdGenerator {
                     val collisionChecker = Strings.isNullOrEmpty(res.getDomain())
                             ? Domain.DEFAULT.getCollisionChecker()
                             : REGISTERED_DOMAINS.get(res.getDomain()).getCollisionChecker();
-                    collisionChecker.free(id.getMillis(), id.getExponent());
+                    collisionChecker.free(id.getDate().toInstant().toEpochMilli(), id.getExponent());
                 }
             })
             .build();
@@ -172,7 +173,7 @@ public class IdGenerator {
         return Id.builder()
                 .id(id)
                 .exponent(idInfo.exponent)
-                .millis(idInfo.time)
+                .date(dateTime)
                 .node(nodeId)
                 .build();
     }
@@ -234,11 +235,12 @@ public class IdGenerator {
             val matcher = PATTERN.matcher(idString);
             if (matcher.find()) {
                 var dateTimeString = matcher.group(2);
-                var dateTime = DATE_TIME_FORMATTER.parse(dateTimeString);
+                val localDateTime = (LocalDateTime) DATE_TIME_FORMATTER.parse(dateTimeString);
+                var dateTime = ZonedDateTime.of(localDateTime, ZoneId.systemDefault());
                 return Optional.of(
                         Id.builder()
                                 .id(idString)
-                                .millis(Instant.from(dateTime).toEpochMilli())
+                                .date(dateTime)
                                 .node(Integer.parseInt(matcher.group(3)))
                                 .exponent(Integer.parseInt(matcher.group(4)))
                                 .build()

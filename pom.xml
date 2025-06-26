@@ -118,7 +118,7 @@
         <sonar.organization>appform-io</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <awaitility.version>4.2.1</awaitility.version>
-        <dns.cache.manipulator.version>1.9.0</dns.cache.manipulator.version>
+        <dns.cache.manipulator.version>1.8.3</dns.cache.manipulator.version>
         <jmh.version>1.37</jmh.version>
         <!-- Plugin versions -->
         <versions.maven.plugin.version>2.16.0</versions.maven.plugin.version>
