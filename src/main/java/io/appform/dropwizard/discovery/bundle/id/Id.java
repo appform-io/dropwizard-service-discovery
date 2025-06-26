@@ -35,7 +35,7 @@ import java.time.ZonedDateTime;
 @ToString
 public class Id {
     private String id;
-    private ZonedDateTime date;
+    private ZonedDateTime generatedDate;
     private int node;
     private int exponent;
 }

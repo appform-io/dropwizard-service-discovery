@@ -211,7 +211,7 @@ class IdGeneratorTest {
         Assertions.assertEquals(247, id.getExponent());
         Assertions.assertEquals(3972, id.getNode());
         Assertions.assertEquals(generateDate(2020, 11, 25, 9, 59, 3, 64, ZoneId.systemDefault()),
-                id.getDate());
+                id.getGeneratedDate());
     }
 
     @Test
@@ -222,7 +222,7 @@ class IdGeneratorTest {
         Assertions.assertEquals(parsedId.getId(), generatedId.getId());
         Assertions.assertEquals(parsedId.getExponent(), generatedId.getExponent());
         Assertions.assertEquals(parsedId.getNode(), generatedId.getNode());
-        Assertions.assertEquals(parsedId.getDate(), generatedId.getDate());
+        Assertions.assertEquals(parsedId.getGeneratedDate(), generatedId.getGeneratedDate());
     }
 
 

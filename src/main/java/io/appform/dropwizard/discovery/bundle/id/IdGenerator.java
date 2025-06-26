@@ -75,7 +75,7 @@ public class IdGenerator {
                     val collisionChecker = Strings.isNullOrEmpty(res.getDomain())
                             ? Domain.DEFAULT.getCollisionChecker()
                             : REGISTERED_DOMAINS.get(res.getDomain()).getCollisionChecker();
-                    collisionChecker.free(id.getDate().toInstant().toEpochMilli(), id.getExponent());
+                    collisionChecker.free(id.getGeneratedDate().toInstant().toEpochMilli(), id.getExponent());
                 }
             })
             .build();
@@ -173,7 +173,7 @@ public class IdGenerator {
         return Id.builder()
                 .id(id)
                 .exponent(idInfo.exponent)
-                .date(dateTime)
+                .generatedDate(dateTime)
                 .node(nodeId)
                 .build();
     }
@@ -240,7 +240,7 @@ public class IdGenerator {
                 return Optional.of(
                         Id.builder()
                                 .id(idString)
-                                .date(dateTime)
+                                .generatedDate(dateTime)
                                 .node(Integer.parseInt(matcher.group(3)))
                                 .exponent(Integer.parseInt(matcher.group(4)))
                                 .build()
