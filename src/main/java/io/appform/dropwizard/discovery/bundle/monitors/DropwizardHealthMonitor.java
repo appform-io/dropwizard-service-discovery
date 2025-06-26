@@ -21,7 +21,7 @@ import com.codahale.metrics.health.HealthCheck;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
 import io.appform.ranger.core.healthservice.TimeEntity;
 import io.appform.ranger.core.healthservice.monitor.IsolatedHealthMonitor;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.setup.Environment;
 
 /**
  * This monitor calls dropwizard healthchecks every few secs.

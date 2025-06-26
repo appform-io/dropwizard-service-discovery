@@ -17,7 +17,6 @@
 
 package io.appform.dropwizard.discovery.bundle.id;
 
-import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -34,7 +33,7 @@ import lombok.ToString;
 @ToString
 public class Id {
     private String id;
-    private Date generatedDate;
+    private long millis;
     private int node;
     private int exponent;
 }

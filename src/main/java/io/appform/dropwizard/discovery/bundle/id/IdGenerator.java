@@ -31,11 +31,12 @@ import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -55,12 +56,12 @@ public class IdGenerator {
 
     private static final int MINIMUM_ID_LENGTH = 22;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom(Long.toBinaryString(System.currentTimeMillis())
-                                                                               .getBytes());
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormat.forPattern("yyMMddHHmmssSSS");
+            .getBytes());
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyMMddHHmmssSSS");
 
     private static final Map<String, Domain> REGISTERED_DOMAINS =
             new ConcurrentHashMap<>(Map.of(Domain.DEFAULT_DOMAIN_NAME,
-                                           Domain.DEFAULT));
+                    Domain.DEFAULT));
     private static final RetryPolicy<GenerationResult> RETRY_POLICY = RetryPolicy.<GenerationResult>builder()
             .withMaxAttempts(readRetryCount())
             .handleIf(throwable -> true)
@@ -71,9 +72,9 @@ public class IdGenerator {
                 if (null != res && !res.getState().equals(IdValidationState.VALID)) {
                     val id = res.getId();
                     val collisionChecker = Strings.isNullOrEmpty(res.getDomain())
-                                           ? Domain.DEFAULT.getCollisionChecker()
-                                           : REGISTERED_DOMAINS.get(res.getDomain()).getCollisionChecker();
-                    collisionChecker.free(id.getGeneratedDate().getTime(), id.getExponent());
+                            ? Domain.DEFAULT.getCollisionChecker()
+                            : REGISTERED_DOMAINS.get(res.getDomain()).getCollisionChecker();
+                    collisionChecker.free(id.getMillis(), id.getExponent());
                 }
             })
             .build();
@@ -166,12 +167,12 @@ public class IdGenerator {
             final IdFormatter idFormatter,
             final CollisionChecker collisionChecker) {
         val idInfo = random(collisionChecker);
-        val dateTime = new DateTime(idInfo.time);
+        val dateTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(idInfo.time), ZoneId.systemDefault());
         val id = String.format("%s%s", prefix, idFormatter.format(dateTime, nodeId, idInfo.exponent));
         return Id.builder()
                 .id(id)
                 .exponent(idInfo.exponent)
-                .generatedDate(dateTime.toDate())
+                .millis(idInfo.time)
                 .node(nodeId)
                 .build();
     }
@@ -232,16 +233,19 @@ public class IdGenerator {
         try {
             val matcher = PATTERN.matcher(idString);
             if (matcher.find()) {
-                return Optional.of(Id.builder()
-                                           .id(idString)
-                                           .node(Integer.parseInt(matcher.group(3)))
-                                           .exponent(Integer.parseInt(matcher.group(4)))
-                                           .generatedDate(DATE_TIME_FORMATTER.parseDateTime(matcher.group(2)).toDate())
-                                           .build());
+                var dateTimeString = matcher.group(2);
+                var dateTime = DATE_TIME_FORMATTER.parse(dateTimeString);
+                return Optional.of(
+                        Id.builder()
+                                .id(idString)
+                                .millis(Instant.from(dateTime).toEpochMilli())
+                                .node(Integer.parseInt(matcher.group(3)))
+                                .exponent(Integer.parseInt(matcher.group(4)))
+                                .build()
+                );
             }
             return Optional.empty();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.warn("Could not parse idString {}", e.getMessage());
             return Optional.empty();
         }
@@ -262,11 +266,11 @@ public class IdGenerator {
             final List<IdValidationConstraint> inConstraints,
             boolean skipGlobal) {
         return generate(IdGenerationRequest.builder()
-                                .prefix(prefix)
-                                .constraints(inConstraints)
-                                .skipGlobal(skipGlobal)
-                                .idFormatter(IdFormatters.original())
-                                .build());
+                .prefix(prefix)
+                .constraints(inConstraints)
+                .skipGlobal(skipGlobal)
+                .idFormatter(IdFormatters.original())
+                .build());
     }
 
     /**
@@ -284,27 +288,27 @@ public class IdGenerator {
             final Domain domain,
             boolean skipGlobal) {
         return generate(IdGenerationRequest.builder()
-                                .prefix(prefix)
-                                .constraints(domain.getConstraints())
-                                .skipGlobal(skipGlobal)
-                                .domain(domain.getDomain())
-                                .idFormatter(domain.getIdFormatter())
-                                .build());
+                .prefix(prefix)
+                .constraints(domain.getConstraints())
+                .skipGlobal(skipGlobal)
+                .domain(domain.getDomain())
+                .idFormatter(domain.getIdFormatter())
+                .build());
     }
 
     public static Optional<Id> generate(final IdGenerationRequest request) {
         return Optional.ofNullable(RETRIER.get(
                         () -> {
                             Id id = generate(request.getPrefix(), request.getIdFormatter(),
-                                             !Strings.isNullOrEmpty(request.getDomain())
-                                             ? REGISTERED_DOMAINS.getOrDefault(request.getDomain(), Domain.DEFAULT)
-                                                     .getCollisionChecker()
-                                             : Domain.DEFAULT.getCollisionChecker());
+                                    !Strings.isNullOrEmpty(request.getDomain())
+                                            ? REGISTERED_DOMAINS.getOrDefault(request.getDomain(), Domain.DEFAULT)
+                                            .getCollisionChecker()
+                                            : Domain.DEFAULT.getCollisionChecker());
                             return new GenerationResult(id,
-                                                        validateId(request.getConstraints(),
-                                                                   id,
-                                                                   request.isSkipGlobal()),
-                                                        request.getDomain());
+                                    validateId(request.getConstraints(),
+                                            id,
+                                            request.isSkipGlobal()),
+                                    request.getDomain());
                         }))
                 .filter(generationResult -> generationResult.getState() == IdValidationState.VALID)
                 .map(GenerationResult::getId);
@@ -324,28 +328,28 @@ public class IdGenerator {
         //First evaluate global constraints
         val failedGlobalConstraint
                 = skipGlobal
-                  ? null
-                  : GLOBAL_CONSTRAINTS.stream()
-                          .filter(constraint -> !constraint.isValid(id))
-                          .findFirst()
-                          .orElse(null);
+                ? null
+                : GLOBAL_CONSTRAINTS.stream()
+                .filter(constraint -> !constraint.isValid(id))
+                .findFirst()
+                .orElse(null);
         if (null != failedGlobalConstraint) {
             return failedGlobalConstraint.failFast()
-                   ? IdValidationState.INVALID_NON_RETRYABLE
-                   : IdValidationState.INVALID_RETRYABLE;
+                    ? IdValidationState.INVALID_NON_RETRYABLE
+                    : IdValidationState.INVALID_RETRYABLE;
         }
         //Evaluate local + domain constraints
         val failedLocalConstraint
                 = null == inConstraints
-                  ? null
-                  : inConstraints.stream()
-                          .filter(constraint -> !constraint.isValid(id))
-                          .findFirst()
-                          .orElse(null);
+                ? null
+                : inConstraints.stream()
+                .filter(constraint -> !constraint.isValid(id))
+                .findFirst()
+                .orElse(null);
         if (null != failedLocalConstraint) {
             return failedLocalConstraint.failFast()
-                   ? IdValidationState.INVALID_NON_RETRYABLE
-                   : IdValidationState.INVALID_RETRYABLE;
+                    ? IdValidationState.INVALID_NON_RETRYABLE
+                    : IdValidationState.INVALID_RETRYABLE;
         }
         return IdValidationState.VALID;
     }
@@ -359,8 +363,7 @@ public class IdGenerator {
                                 "NUM_ID_GENERATION_RETRIES");
             }
             return count;
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Please provide a valid positive integer for NUM_ID_GENERATION_RETRIES");
         }
     }

@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.*;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -143,7 +142,7 @@ class IdGeneratorTest {
 
     @Test
     void testGenerateWithConstraintsFailedWithGlobalConstraint() {
-        IdGenerator.initialize(23,  Collections.singletonList(id -> false), Map.of("TEST", Collections.singletonList(id -> false)));
+        IdGenerator.initialize(23, Collections.singletonList(id -> false), Map.of("TEST", Collections.singletonList(id -> false)));
         Optional<Id> id = IdGenerator.generateWithConstraints("TEST", "TEST", false);
         Assertions.assertFalse(id.isPresent());
     }
@@ -212,7 +211,7 @@ class IdGeneratorTest {
         Assertions.assertEquals(247, id.getExponent());
         Assertions.assertEquals(3972, id.getNode());
         Assertions.assertEquals(generateDate(2020, 11, 25, 9, 59, 3, 64, ZoneId.systemDefault()),
-                id.getGeneratedDate());
+                id.getMillis());
     }
 
     @Test
@@ -223,22 +222,20 @@ class IdGeneratorTest {
         Assertions.assertEquals(parsedId.getId(), generatedId.getId());
         Assertions.assertEquals(parsedId.getExponent(), generatedId.getExponent());
         Assertions.assertEquals(parsedId.getNode(), generatedId.getNode());
-        Assertions.assertEquals(parsedId.getGeneratedDate(), generatedId.getGeneratedDate());
+        Assertions.assertEquals(parsedId.getMillis(), generatedId.getMillis());
     }
 
 
     @SuppressWarnings("SameParameterValue")
-    private Date generateDate(int year, int month, int day, int hour, int min, int sec, int ms, ZoneId zoneId) {
-        return Date.from(
-                Instant.from(
-                        ZonedDateTime.of(
-                                LocalDateTime.of(
-                                        year, month, day, hour, min, sec, Math.multiplyExact(ms, 1000000)
-                                ),
-                                zoneId
-                        )
+    private long generateDate(int year, int month, int day, int hour, int min, int sec, int ms, ZoneId zoneId) {
+        return Instant.from(
+                ZonedDateTime.of(
+                        LocalDateTime.of(
+                                year, month, day, hour, min, sec, Math.multiplyExact(ms, 1000000)
+                        ),
+                        zoneId
                 )
-        );
+        ).toEpochMilli();
     }
 
 

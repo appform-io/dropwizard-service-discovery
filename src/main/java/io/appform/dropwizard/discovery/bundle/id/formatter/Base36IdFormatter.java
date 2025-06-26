@@ -1,7 +1,7 @@
 package io.appform.dropwizard.discovery.bundle.id.formatter;
 
 import java.math.BigInteger;
-import org.joda.time.DateTime;
+import java.time.ZonedDateTime;
 
 public class Base36IdFormatter implements IdFormatter {
 
@@ -12,7 +12,7 @@ public class Base36IdFormatter implements IdFormatter {
     }
 
     @Override
-    public String format(final DateTime dateTime,
+    public String format(final ZonedDateTime dateTime,
                          final int nodeId,
                          final int randomNonce) {
         return toBase36(idFormatter.format(dateTime, nodeId, randomNonce));

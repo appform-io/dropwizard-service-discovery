@@ -4,11 +4,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
-import io.dropwizard.Configuration;
+import io.dropwizard.core.Configuration;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.jetty.HttpsConnectorFactory;
-import io.dropwizard.server.DefaultServerFactory;
-import io.dropwizard.server.SimpleServerFactory;
+import io.dropwizard.core.server.DefaultServerFactory;
+import io.dropwizard.core.server.SimpleServerFactory;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

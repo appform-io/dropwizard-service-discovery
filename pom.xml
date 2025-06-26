@@ -7,7 +7,7 @@
     <groupId>io.appform.dropwizard.discovery</groupId>
     <artifactId>dropwizard-service-discovery</artifactId>
     <packaging>jar</packaging>
-    <version>2.1.10-2</version>
+    <version>5.0.0-1-SNAPSHOT</version>
 
     <name>Dropwizard Service Discovery</name>
     <url>https://github.com/santanusinha/dropwizard-service-discovery</url>
@@ -108,19 +108,28 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <dropwizard.version>2.1.10</dropwizard.version>
-        <lombok.version>1.18.24</lombok.version>
-        <junit.version>5.8.2</junit.version>
+        <dropwizard.version>5.0.0-rc.3</dropwizard.version>
+        <lombok.version>1.18.36</lombok.version>
+        <junit.version>5.13.1</junit.version>
         <ranger.version>[1.0-RC1,)</ranger.version>
         <curator.version>4.2.0</curator.version>
-        <failsafe.version>3.2.4</failsafe.version>
-        <curator.version>5.1.0</curator.version>
-        <mockito.version>4.2.0</mockito.version>
+        <failsafe.version>3.3.2</failsafe.version>
+        <mockito.version>5.18.0</mockito.version>
         <sonar.organization>appform-io</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <awaitility.version>4.2.0</awaitility.version>
-        <logback.version>1.2.10</logback.version>
-        <dns.cache.manipulator.version>1.8.1</dns.cache.manipulator.version>
+        <awaitility.version>4.2.1</awaitility.version>
+        <dns.cache.manipulator.version>1.9.0</dns.cache.manipulator.version>
+        <jmh.version>1.37</jmh.version>
+        <!-- Plugin versions -->
+        <versions.maven.plugin.version>2.16.0</versions.maven.plugin.version>
+        <maven.compiler.plugin.version>3.12.1</maven.compiler.plugin.version>
+        <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
+        <jacoco.maven.plugin.version>0.8.13</jacoco.maven.plugin.version>
+        <maven.enforcer.plugin.version>3.4.1</maven.enforcer.plugin.version>
+        <maven.source.plugin.version>3.3.0</maven.source.plugin.version>
+        <maven.javadoc.plugin.version>3.6.3</maven.javadoc.plugin.version>
+        <nexus.staging.maven.plugin.version>1.6.13</nexus.staging.maven.plugin.version>
+        <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -146,13 +155,13 @@
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
-            <version>1.35</version>
+            <version>${jmh.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-generator-annprocess</artifactId>
-            <version>1.35</version>
+            <version>${jmh.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -261,13 +270,6 @@
             <version>${awaitility.version}</version>
             <scope>test</scope>
         </dependency>
-
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>dns-cache-manipulator</artifactId>
@@ -282,7 +284,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>versions-maven-plugin</artifactId>
-                    <version>2.5</version>
+                    <version>${versions.maven.plugin.version}</version>
                     <configuration>
                         <generateBackupPoms>false</generateBackupPoms>
                     </configuration>
@@ -290,7 +292,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.9.0</version>
+                    <version>${maven.compiler.plugin.version}</version>
                     <configuration>
                         <source>17</source>
                         <target>17</target>
@@ -303,12 +305,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <version>${maven.surefire.plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.7</version>
+                <version>${jacoco.maven.plugin.version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -330,7 +332,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.9.0</version>
+                <version>${maven.compiler.plugin.version}</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -343,7 +345,7 @@
                         <annotationProcessorPath>
                             <groupId>org.openjdk.jmh</groupId>
                             <artifactId>jmh-generator-annprocess</artifactId>
-                            <version>1.35</version>
+                            <version>${jmh.version}</version>
                         </annotationProcessorPath>
                     </annotationProcessorPaths>
                 </configuration>
@@ -351,7 +353,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M2</version>
+                <version>${maven.enforcer.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>enforce-no-snapshots</id>
@@ -372,7 +374,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>${maven.source.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -385,7 +387,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>${maven.javadoc.plugin.version}</version>
                 <configuration>
                     <source>8</source>
                 </configuration>
@@ -415,7 +417,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.13</version>
+                        <version>${nexus.staging.maven.plugin.version}</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>
@@ -427,7 +429,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
+                        <version>${maven.gpg.plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
