@@ -1,3 +1,12 @@
+
+# 🛑 THIS LIBRARY IS DEPRECATED
+
+Use `ranger-discovery-bundle` from the [Ranger](https://github.com/appform-io/ranger) project. Interface is similar.
+
+
+## THE FOLLOWING IS LEFT INTACT FOR VISITORS
+
+
 # Dropwizard Service Discovery [![Build](https://github.com/appform-io/dropwizard-service-discovery/actions/workflows/merge-update.yml/badge.svg)](https://github.com/appform-io/dropwizard-service-discovery/actions/workflows/merge-update.yml)
 Provides service discovery to dropwizard services. It uses [Ranger](https://github.com/flipkart-incubator/ranger) for service discovery.
 
