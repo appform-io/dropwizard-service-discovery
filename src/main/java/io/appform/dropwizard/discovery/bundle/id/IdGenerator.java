@@ -235,7 +235,7 @@ public class IdGenerator {
             val matcher = PATTERN.matcher(idString);
             if (matcher.find()) {
                 var dateTimeString = matcher.group(2);
-                val localDateTime = (LocalDateTime) DATE_TIME_FORMATTER.parse(dateTimeString);
+                val localDateTime = LocalDateTime.from(DATE_TIME_FORMATTER.parse(dateTimeString));
                 var dateTime = ZonedDateTime.of(localDateTime, ZoneId.systemDefault());
                 return Optional.of(
                         Id.builder()
