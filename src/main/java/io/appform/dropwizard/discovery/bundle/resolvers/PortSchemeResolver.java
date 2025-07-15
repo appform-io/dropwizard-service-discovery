@@ -1,6 +1,7 @@
 package io.appform.dropwizard.discovery.bundle.resolvers;
 
-import io.dropwizard.Configuration;
+
+import io.dropwizard.core.Configuration;
 
 /**
  * NodeInfoResolver.java

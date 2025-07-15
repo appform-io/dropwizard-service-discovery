@@ -17,12 +17,13 @@
 
 package io.appform.dropwizard.discovery.bundle.id;
 
-import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+
+import java.time.ZonedDateTime;
 
 /**
  * A representation of an ID
@@ -34,7 +35,7 @@ import lombok.ToString;
 @ToString
 public class Id {
     private String id;
-    private Date generatedDate;
+    private ZonedDateTime generatedDate;
     private int node;
     private int exponent;
 }

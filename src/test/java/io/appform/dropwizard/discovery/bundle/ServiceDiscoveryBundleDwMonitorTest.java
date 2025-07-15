@@ -24,24 +24,22 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheck;
 import com.codahale.metrics.health.HealthCheckRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import io.appform.ranger.core.healthcheck.HealthcheckStatus;
-import io.dropwizard.Configuration;
+import io.dropwizard.core.Configuration;
 import io.dropwizard.jersey.DropwizardResourceConfig;
 import io.dropwizard.jersey.setup.JerseyEnvironment;
 import io.dropwizard.jetty.ConnectorFactory;
 import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.lifecycle.setup.LifecycleEnvironment;
-import io.dropwizard.server.DefaultServerFactory;
-import io.dropwizard.setup.AdminEnvironment;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.server.DefaultServerFactory;
+import io.dropwizard.core.setup.AdminEnvironment;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -51,16 +49,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 
 
 @Slf4j
 class ServiceDiscoveryBundleDwMonitorTest {
-
-    static {
-        val root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-        root.setLevel(Level.INFO);
-    }
 
     private final HealthCheckRegistry healthChecks = new HealthCheckRegistry();
     private final JerseyEnvironment jerseyEnvironment = mock(JerseyEnvironment.class);

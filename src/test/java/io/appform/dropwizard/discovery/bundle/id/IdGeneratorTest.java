@@ -30,9 +30,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.time.*;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -143,7 +145,7 @@ class IdGeneratorTest {
 
     @Test
     void testGenerateWithConstraintsFailedWithGlobalConstraint() {
-        IdGenerator.initialize(23,  Collections.singletonList(id -> false), Map.of("TEST", Collections.singletonList(id -> false)));
+        IdGenerator.initialize(23, Collections.singletonList(id -> false), Map.of("TEST", Collections.singletonList(id -> false)));
         Optional<Id> id = IdGenerator.generateWithConstraints("TEST", "TEST", false);
         Assertions.assertFalse(id.isPresent());
     }
@@ -228,16 +230,12 @@ class IdGeneratorTest {
 
 
     @SuppressWarnings("SameParameterValue")
-    private Date generateDate(int year, int month, int day, int hour, int min, int sec, int ms, ZoneId zoneId) {
-        return Date.from(
-                Instant.from(
-                        ZonedDateTime.of(
-                                LocalDateTime.of(
-                                        year, month, day, hour, min, sec, Math.multiplyExact(ms, 1000000)
-                                ),
-                                zoneId
-                        )
-                )
+    private ZonedDateTime generateDate(int year, int month, int day, int hour, int min, int sec, int ms, ZoneId zoneId) {
+        return ZonedDateTime.of(
+                LocalDateTime.of(
+                        year, month, day, hour, min, sec, Math.multiplyExact(ms, 1000000)
+                ),
+                zoneId
         );
     }
 

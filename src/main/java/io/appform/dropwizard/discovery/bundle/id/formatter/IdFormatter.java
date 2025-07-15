@@ -1,10 +1,10 @@
 package io.appform.dropwizard.discovery.bundle.id.formatter;
 
-import org.joda.time.DateTime;
+import java.time.ZonedDateTime;
 
 public interface IdFormatter {
 
-    String format(final DateTime dateTime,
+    String format(final ZonedDateTime dateTime,
                   final int nodeId,
                   final int randomNonce);
 
